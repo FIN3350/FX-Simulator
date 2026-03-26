@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FX Trading Simulator — International Finance</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c10;--bg2:#0d1117;--bg3:#111820;--bg4:#161f2a;--bg5:#1a2535;
+  --border:#1e2d3d;--border2:#243347;--border3:#2e4060;
+  --text:#c8d8e8;--text2:#7a9ab8;--text3:#4a6880;--text4:#2a4860;
+  --green:#00c878;--green2:#00ff9d;--green3:rgba(0,200,120,0.12);
+  --red:#ff3b5c;--red2:#ff6b80;--red3:rgba(255,59,92,0.12);
+  --gold:#f5a623;--gold2:#ffc85a;--gold3:rgba(245,166,35,0.12);
+  --blue:#3b82f6;--blue2:#60a5fa;--blue3:rgba(59,130,246,0.12);
+  --cyan:#00d4ff;--cyan2:rgba(0,212,255,0.1);
+  --purple:#a78bfa;--purple2:rgba(167,139,250,0.12);
+  --teal:#2dd4bf;--teal2:rgba(45,212,191,0.12);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;overflow:hidden}
+.app{display:grid;grid-template-rows:36px 1fr;height:100vh}
+.body{display:grid;grid-template-columns:260px 1fr 300px;min-height:0;overflow:hidden}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;flex-direction:column;padding:0;}
+.topbar-row1{display:flex;align-items:center;padding:0 14px;gap:10px;height:36px;border-bottom:1px solid var(--border);}
+.topbar-row2{display:none;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;}
+.topbar-logo::before{content:'FX';background:var(--cyan);color:var(--bg);font-size:9px;font-weight:700;padding:2px 4px;border-radius:2px;}
+.topbar-pair-strip{display:flex;gap:2px;flex:1;overflow:hidden;}
+.pair-ticker{display:flex;align-items:center;gap:8px;padding:4px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:2px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.pair-ticker:hover{border-color:var(--border3);background:var(--bg4)}
+.pair-ticker.active{border-color:var(--cyan);background:var(--cyan2)}
+.pair-ticker-name{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.5px}
+.pair-ticker-price{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text)}
+.pair-ticker-chg{font-family:'Share Tech Mono',monospace;font-size:10px}
+.chg-up{color:var(--green)}.chg-dn{color:var(--red)}
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+.balance-display{font-family:'Share Tech Mono',monospace;font-size:13px;display:flex;align-items:center;gap:6px;}
+.balance-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.balance-val{color:var(--gold2);font-size:15px}
+.sim-clock{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3)}
+.btn-sm{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:4px 9px;border-radius:2px;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text3);transition:all .15s;}
+.btn-sm:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-sm.danger{border-color:var(--red);color:var(--red)}
+.btn-sm.danger:hover{background:var(--red3)}
+.btn-sm.hedge-active{border-color:var(--teal)!important;color:var(--teal)!important;background:var(--teal2)!important}
+.left-panel{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-head{padding:10px 14px;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:space-between;}
+.panel-body{flex:1;overflow-y:auto;padding:12px}
+.panel-body::-webkit-scrollbar{width:3px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.pair-select-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.pair-select{font-family:'Share Tech Mono',monospace;font-size:13px;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;color:var(--text);padding:7px 10px;width:100%;outline:none;cursor:pointer;margin-bottom:12px;transition:border-color .15s;}
+.pair-select:focus{border-color:var(--cyan)}
+.live-quote-box{background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:10px 12px;margin-bottom:12px;}
+.lq-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.lq-prices{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.lq-side{text-align:center;padding:8px;border-radius:2px}
+.lq-side.bid{background:var(--red3);border:1px solid var(--red)}
+.lq-side.ask{background:var(--green3);border:1px solid var(--green)}
+.lq-side-label{font-size:8px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.bid .lq-side-label{color:var(--red2)}.ask .lq-side-label{color:var(--green)}
+.lq-price{font-family:'Share Tech Mono',monospace;font-size:20px;line-height:1;color:var(--text)}
+.lq-spread{text-align:center;font-size:9px;color:var(--text3);margin-top:5px}
+.field-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;display:block}
+.field-input{font-family:'Share Tech Mono',monospace;font-size:13px;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;color:var(--text);padding:7px 10px;width:100%;outline:none;transition:border-color .15s;margin-bottom:10px;-moz-appearance:textfield;}
+.field-input:focus{border-color:var(--cyan)}
+.field-input::-webkit-inner-spin-button{-webkit-appearance:none}
+textarea.field-input{resize:vertical;min-height:60px;font-family:'Barlow',sans-serif;font-size:12px;line-height:1.5}
+.dir-buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.btn-buy{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:10px;border-radius:2px;cursor:pointer;border:1px solid var(--green);background:var(--green3);color:var(--green2);transition:all .15s;}
+.btn-buy:hover{background:rgba(0,200,120,0.25)}
+.btn-sell{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:10px;border-radius:2px;cursor:pointer;border:1px solid var(--red);background:var(--red3);color:var(--red2);transition:all .15s;}
+.btn-sell:hover{background:rgba(255,59,92,0.25)}
+.btn-buy.active{background:rgba(0,200,120,0.35);box-shadow:0 0 12px rgba(0,200,120,0.3)}
+.btn-sell.active{background:rgba(255,59,92,0.35);box-shadow:0 0 12px rgba(255,59,92,0.3)}
+.submit-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;width:100%;padding:10px;border-radius:2px;cursor:pointer;border:1px solid var(--cyan);background:var(--cyan2);color:var(--cyan);transition:all .15s;margin-bottom:6px;}
+.submit-btn:hover{background:rgba(0,212,255,0.2);box-shadow:0 0 12px rgba(0,212,255,0.2)}
+.form-note{font-size:10px;color:var(--text3);text-align:center;line-height:1.4}
+/* Hedge banner */
+.hedge-banner{background:var(--bg3);border:1px solid var(--teal);border-radius:2px;padding:10px 12px;margin-bottom:12px;}
+.hedge-banner-hdr{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.hedge-scenario-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.hedge-scenario-body{font-size:11px;color:var(--text2);line-height:1.55;margin-bottom:8px}
+.hedge-scenario-prompt{font-size:10px;color:var(--teal);font-style:italic;border-top:1px solid rgba(45,212,191,0.2);padding-top:6px;line-height:1.4}
+/* Centre */
+.centre-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.chart-area{height:240px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+.chart-header{position:absolute;top:0;left:0;right:0;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;z-index:2;background:linear-gradient(to bottom,var(--bg2),transparent);}
+.chart-pair-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px;color:var(--text)}
+.chart-price-big{font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--text)}
+.chart-change{font-family:'Share Tech Mono',monospace;font-size:12px}
+.chart-canvas{width:100%;height:100%;display:block}
+.chart-range-btns{display:flex;gap:4px;position:absolute;bottom:8px;right:12px;z-index:2}
+.range-btn{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text3);transition:all .15s;}
+.range-btn:hover{border-color:var(--border3);color:var(--text2)}
+.range-btn.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan2)}
+.centre-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2)}
+.centre-tab{padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.centre-tab:hover{color:var(--text2)}
+.centre-tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.centre-content{flex:1;overflow-y:auto;padding:16px}
+.centre-content::-webkit-scrollbar{width:3px}
+.centre-content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tab-page{display:none}.tab-page.active{display:block}
+/* Tables */
+.positions-table,.history-table{width:100%;border-collapse:collapse;font-size:11px}
+.positions-table th,.history-table th{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:6px 10px;border-bottom:1px solid var(--border);text-align:right;background:var(--bg2);}
+.positions-table th:first-child,.history-table th:first-child{text-align:left}
+.positions-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.03);font-family:'Share Tech Mono',monospace;font-size:11px;text-align:right;}
+.positions-table td:first-child{text-align:left;font-family:'Barlow',sans-serif}
+.positions-table tr:hover td{background:rgba(255,255,255,0.02)}
+.history-table td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.03);font-family:'Share Tech Mono',monospace;font-size:10px;text-align:right;}
+.history-table td:first-child{text-align:left;font-family:'Barlow',sans-serif;font-size:11px}
+.pos-buy{color:var(--green2)}.pos-sell{color:var(--red2)}
+.pnl-pos{color:var(--green2)}.pnl-neg{color:var(--red2)}
+.close-btn{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text3);transition:all .15s;}
+.close-btn:hover{border-color:var(--red);color:var(--red)}
+.reason-cell{font-family:'Barlow',sans-serif;font-size:10px;color:var(--text2);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.hedge-badge{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:1px 5px;border-radius:1px;background:var(--teal2);color:var(--teal);border:1px solid var(--teal);margin-left:4px}
+/* News */
+.news-item{padding:10px 0;border-bottom:1px solid var(--border);}
+.news-item:last-child{border-bottom:none}
+.news-time{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:3px}
+.news-headline{font-size:12px;color:var(--text);line-height:1.4;margin-bottom:3px}
+.news-impact{display:inline-block;font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:1px 6px;border-radius:1px}
+.impact-high{background:var(--red3);color:var(--red2);border:1px solid var(--red)}
+.impact-med{background:var(--gold3);color:var(--gold2);border:1px solid var(--gold)}
+.impact-low{background:var(--blue3);color:var(--blue2);border:1px solid var(--blue)}
+/* Reflect tab */
+.reflect-card{background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:12px 14px;margin-bottom:10px}
+.reflect-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.reflect-card-pair{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--purple)}
+.reflect-card-pnl{font-family:'Share Tech Mono',monospace;font-size:11px}
+.reflect-q{font-size:10px;color:var(--text3);margin-bottom:3px;font-style:italic}
+.reflect-a{font-size:11px;color:var(--text2);line-height:1.5;padding:6px 8px;background:var(--bg4);border-radius:2px;border-left:2px solid var(--purple)}
+.reflect-pending{font-size:10px;color:var(--text4);font-style:italic;padding:6px 8px;background:var(--bg4);border-radius:2px}
+.hedge-eval-box{margin-top:8px;padding:8px 10px;border-radius:2px;font-size:11px;line-height:1.5}
+.hedge-eval-box.correct{background:var(--green3);border:1px solid var(--green);color:var(--green2)}
+.hedge-eval-box.incorrect{background:var(--red3);border:1px solid var(--red);color:var(--red2)}
+.hedge-eval-explanation{color:var(--text2);margin-top:4px;font-size:10px;line-height:1.5}
+/* Right panel */
+.right-panel{background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.pnl-strip{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.pnl-cell{background:var(--bg3);padding:10px 14px}
+.pnl-cell-label{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.pnl-cell-val{font-family:'Share Tech Mono',monospace;font-size:18px;color:var(--text);line-height:1}
+.pnl-cell-val.pos{color:var(--green2)}.pnl-cell-val.neg{color:var(--red2)}.pnl-cell-val.gold{color:var(--gold2)}
+.perf-section{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.perf-title{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.perf-item{margin-bottom:8px}
+.perf-item-label{font-size:10px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:3px}
+.perf-bar-track{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.perf-bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.bar-green{background:linear-gradient(to right,var(--green),var(--green2))}
+.bar-red{background:linear-gradient(to right,var(--red),var(--red2))}
+.bar-gold{background:linear-gradient(to right,var(--gold),var(--gold2))}
+.bar-blue{background:linear-gradient(to right,var(--blue),var(--blue2))}
+.bar-teal{background:linear-gradient(to right,var(--teal),#a5f3fc)}
+.notes-area{flex:1;overflow-y:auto;padding:12px 14px}
+.notes-area::-webkit-scrollbar{width:3px}
+.notes-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.notes-title{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.learning-note{background:var(--bg3);border:1px solid var(--border);border-radius:2px;padding:8px 10px;margin-bottom:6px;font-size:11px;line-height:1.5;color:var(--text2);}
+.learning-note-pair{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:1px;color:var(--cyan);margin-bottom:3px;text-transform:uppercase}
+.learning-note.reflected .learning-note-pair{color:var(--purple)}
+.export-btn{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;width:calc(100% - 28px);margin:0 14px 12px;padding:8px;border-radius:2px;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text3);transition:all .15s;}
+.export-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+/* Modal */
+.ohlc-pair-tabs{display:flex;flex-wrap:wrap;gap:4px;margin:14px 0 10px}
+.ohlc-pair-tab{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text3);transition:all .15s}
+.ohlc-pair-tab:hover{border-color:var(--border3);color:var(--text2)}
+.ohlc-pair-tab.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan2)}
+.ohlc-table{width:100%;border-collapse:collapse;font-size:11px}
+.ohlc-table th{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:5px 8px;border-bottom:1px solid var(--border);background:var(--bg2);text-align:right}
+.ohlc-table th:first-child{text-align:left}
+.ohlc-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.025);font-family:'Share Tech Mono',monospace;font-size:10px;text-align:right}
+.ohlc-table td:first-child{text-align:left;font-family:'Barlow',sans-serif;font-size:10px;color:var(--text2)}
+.ohlc-table tr:hover td{background:rgba(255,255,255,0.02)}
+.ohlc-table tr.today-row td{background:rgba(0,212,255,0.05);font-weight:600}
+.ohlc-up{color:var(--green2)}.ohlc-dn{color:var(--red2)}.ohlc-flat{color:var(--text3)}
+.ohlc-bar{display:inline-block;height:6px;border-radius:1px;vertical-align:middle;margin-left:4px}
+.section-divider{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.quotes-table{width:100%;border-collapse:collapse;font-size:11px}
+.quotes-table th{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:7px 10px;border-bottom:1px solid var(--border);background:var(--bg2);text-align:right}
+.quotes-table th:first-child{text-align:left}
+.quotes-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.03);font-family:'Share Tech Mono',monospace;font-size:12px;text-align:right}
+.quotes-table td:first-child{font-family:'Barlow',sans-serif;text-align:left}
+.quotes-table tr:hover td{background:rgba(255,255,255,0.02)}
+.quotes-table tr.active-pair td{background:rgba(0,212,255,0.05)}
+.q-bid{color:var(--red2)}.q-ask{color:var(--green2)}
+.q-chg-up{color:var(--green)}.q-chg-dn{color:var(--red)}
+.q-spread{color:var(--text3);font-size:10px}
+.quotes-note{font-size:10px;color:var(--text3);padding:10px 0 4px;line-height:1.6}
+.fwd-strip{margin-top:8px;border-top:1px solid var(--border2);padding-top:7px}
+.fwd-strip-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.fwd-strip-label::after{content:'CIP';font-size:7px;background:var(--gold3);color:var(--gold2);border:1px solid var(--gold);padding:0 4px;border-radius:1px;letter-spacing:1px}
+.fwd-row{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:3px;margin-bottom:3px;align-items:center}
+.fwd-tenor{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.5px}
+.fwd-rate{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text);text-align:right}
+.fwd-pts{font-family:'Share Tech Mono',monospace;font-size:10px;text-align:right}
+.fwd-pts.prem{color:var(--green2)}.fwd-pts.disc{color:var(--red2)}
+.fwd-col-hdr{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--text4);text-align:right}
+.fwd-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px}
+.fwd-table th{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:6px 10px;border-bottom:1px solid var(--border);text-align:right;background:var(--bg2)}
+.fwd-table th:first-child{text-align:left}
+.fwd-table td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.03);font-family:'Share Tech Mono',monospace;font-size:11px;text-align:right}
+.fwd-table td:first-child{text-align:left;font-family:'Barlow',sans-serif;font-size:11px}
+.fwd-table tr:hover td{background:rgba(255,255,255,0.02)}
+.fwd-prem{color:var(--green2)}.fwd-disc{color:var(--red2)}
+.fwd-regime-tag{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:1px 5px;border-radius:1px;margin-left:4px}
+.tag-peg{background:var(--gold3);color:var(--gold2);border:1px solid var(--gold)}
+.tag-mgd{background:var(--blue3);color:var(--blue2);border:1px solid var(--blue)}
+.irp-explainer{background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:12px 14px;margin-bottom:14px}
+.irp-explainer-title{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold2);margin-bottom:6px}
+.irp-explainer-body{font-size:11px;color:var(--text2);line-height:1.6}
+.irp-formula{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);margin:6px 0;text-align:center;padding:6px;background:var(--bg4);border-radius:2px}
+.rate-cell{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.rate-flag{font-size:8px;padding:1px 4px;border-radius:1px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.flag-hi{background:var(--green3);color:var(--green2);border:1px solid var(--green)}
+.flag-lo{background:var(--red3);color:var(--red2);border:1px solid var(--red)}
+
+/* ── GROUP ASSIGNMENT ── */
+.assign-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:flex;align-items:center;justify-content:center;}
+.assign-box{background:var(--bg2);border:1px solid var(--border3);border-radius:4px;width:520px;max-width:92vw;padding:32px;text-align:center;}
+.assign-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.assign-heading{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--text);margin-bottom:4px}
+.assign-pair{font-family:'Share Tech Mono',monospace;font-size:42px;font-weight:400;color:var(--cyan);margin:12px 0 4px;letter-spacing:2px}
+.assign-pair-desc{font-size:13px;color:var(--text2);margin-bottom:20px}
+.assign-group{font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--gold2);margin-bottom:24px;letter-spacing:1px}
+.assign-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:24px}
+.assign-cell{background:var(--bg3);border:1px solid var(--border);border-radius:2px;padding:8px 4px;font-size:10px}
+.assign-cell-grp{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.assign-cell-pair{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text)}
+.assign-cell.mine{border-color:var(--cyan);background:var(--cyan2)}
+.assign-cell.mine .assign-cell-pair{color:var(--cyan);font-weight:700}
+.assign-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 28px;border-radius:2px;cursor:pointer;border:1px solid var(--cyan);background:var(--cyan2);color:var(--cyan);transition:all .15s;margin-right:8px}
+.assign-btn:hover{background:rgba(0,212,255,0.2)}
+.assign-btn-sec{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:10px 20px;border-radius:2px;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text3);transition:all .15s}
+.assign-btn-sec:hover{border-color:var(--border3);color:var(--text2)}
+.assign-note{font-size:10px;color:var(--text3);margin-top:14px;line-height:1.5}
+
+/* ── ROOM ENTRY ── */
+.room-overlay{position:fixed;inset:0;background:var(--bg);z-index:900;display:flex;align-items:center;justify-content:center;}
+.room-box{background:var(--bg2);border:1px solid var(--border3);border-radius:4px;width:420px;max-width:92vw;padding:32px;text-align:center;}
+.room-logo{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+.room-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.room-sub{font-size:12px;color:var(--text3);margin-bottom:24px;line-height:1.5;}
+.room-input{font-family:'Share Tech Mono',monospace;font-size:18px;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;color:var(--cyan);padding:12px 16px;width:100%;outline:none;text-align:center;text-transform:uppercase;letter-spacing:3px;margin-bottom:8px;transition:border-color .15s;}
+.room-input:focus{border-color:var(--cyan);}
+.room-input::placeholder{color:var(--text4);letter-spacing:1px;text-transform:none;font-size:14px;}
+.room-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:11px 32px;border-radius:2px;cursor:pointer;border:1px solid var(--cyan);background:var(--cyan2);color:var(--cyan);transition:all .15s;width:100%;margin-top:4px;}
+.room-btn:hover{background:rgba(0,212,255,0.2);}
+.room-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.room-status{font-size:11px;color:var(--text3);margin-top:10px;min-height:16px;line-height:1.4;}
+.room-status.err{color:var(--red2);}
+.room-status.ok{color:var(--green2);}
+.sync-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:middle;animation:tick 1.5s infinite;}
+.sync-dot.off{background:var(--text3);animation:none;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-box{background:var(--bg2);border:1px solid var(--border3);border-radius:4px;width:500px;max-width:92vw;padding:24px;transform:translateY(8px);transition:transform .2s;}
+.modal-overlay.show .modal-box{transform:translateY(0)}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--purple);margin-bottom:4px}
+.modal-trade-summary{font-size:11px;color:var(--text3);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);line-height:1.5}
+.modal-q{font-size:12px;color:var(--text);margin-bottom:6px;line-height:1.5}
+.modal-q-num{color:var(--purple);font-weight:600;margin-right:4px}
+.modal-input{font-family:'Barlow',sans-serif;font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:2px;color:var(--text);padding:8px 10px;width:100%;outline:none;resize:vertical;min-height:56px;line-height:1.5;margin-bottom:12px;transition:border-color .15s;}
+.modal-input:focus{border-color:var(--purple)}
+.modal-footer{display:flex;justify-content:space-between;align-items:center}
+.modal-skip{font-size:10px;color:var(--text3);cursor:pointer;text-underline-offset:2px}
+.modal-skip:hover{color:var(--text2);text-decoration:underline}
+.modal-progress{font-size:9px;letter-spacing:1px;color:var(--text4)}
+.modal-next{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:8px 22px;border-radius:2px;cursor:pointer;border:1px solid var(--purple);background:var(--purple2);color:var(--purple);transition:all .15s;}
+.modal-next:hover{background:rgba(167,139,250,0.25)}
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border3);border-radius:3px;padding:10px 20px;font-size:12px;color:var(--text);opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
+.toast.show{opacity:1}
+.toast.success{border-color:var(--green);color:var(--green2)}
+.toast.error{border-color:var(--red);color:var(--red2)}
+.empty-state{text-align:center;padding:32px 16px;color:var(--text3);font-size:11px;line-height:1.8}
+.empty-state-icon{font-size:28px;margin-bottom:8px;opacity:.5}
+@keyframes tick{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
+.live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--green);animation:tick 1.5s infinite;margin-right:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-row1">
+    <div class="topbar-logo">Trading Simulator</div>
+      <span id="syncIndicator" style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:4px;white-space:nowrap"><span class="sync-dot off" id="syncDot"></span><span id="syncLabel">—</span></span>
+    <div class="topbar-right">
+      <div class="sim-clock"><span class="live-dot"></span><span id="simClock">Day 1 — 09:00</span>&nbsp;<span id="simSession" style="font-size:9px;letter-spacing:1px;text-transform:uppercase;opacity:0.8">London</span></div>
+      <div class="balance-display">
+        <span class="balance-label">Balance</span>
+        <span class="balance-val" id="balanceDisplay">$250,000</span>
+      </div>
+      <button class="btn-sm" style="border-color:var(--purple);color:var(--purple)" onclick="showAssignment()">🎲 Groups</button>
+      <button class="btn-sm" id="speedBtn" onclick="cycleSpeed()">⏱ 1×</button>
+      <button class="btn-sm" id="hedgeModeBtn" onclick="toggleHedgeMode()">🏢 Hedge</button>
+      <button class="btn-sm danger" onclick="confirmReset()">Reset</button>
+      <button class="btn-sm" onclick="exportLog()">CSV</button>
+      <button style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 14px;border-radius:2px;cursor:pointer;border:1px solid var(--gold);background:var(--gold3);color:var(--gold2);transition:all .15s;white-space:nowrap" onclick="printReport()">🖨 Print Report</button>
+    </div>
+  </div>
+  <div class="topbar-row2">
+    <div class="topbar-pair-strip" id="pairStrip"></div>
+  </div>
+</div>
+
+<div class="body">
+
+<!-- LEFT: ORDER FORM -->
+<div class="left-panel">
+  <div class="panel-head"><span id="formTitle">Place Order</span></div>
+  <div class="panel-body">
+
+    <div class="hedge-banner" id="hedgeBanner" style="display:none">
+      <div class="hedge-banner-hdr">🏢 Corporate Hedge Scenario</div>
+      <div class="hedge-scenario-title" id="hedgeTitle"></div>
+      <div class="hedge-scenario-body" id="hedgeBody"></div>
+      <div class="hedge-scenario-prompt" id="hedgePrompt"></div>
+    </div>
+
+    <div class="pair-select-label">Currency Pair</div>
+    <select class="pair-select" id="orderPair" onchange="onPairChange()">
+      <option value="EURUSD">EUR/USD — Euro / US Dollar</option>
+      <option value="GBPUSD">GBP/USD — British Pound / US Dollar</option>
+      <option value="USDJPY">USD/JPY — US Dollar / Japanese Yen</option>
+      <option value="USDCAD">USD/CAD — US Dollar / Canadian Dollar</option>
+      <option value="AUDUSD">AUD/USD — Australian Dollar / US Dollar</option>
+      <option value="NZDUSD">NZD/USD — New Zealand Dollar / US Dollar</option>
+      <option value="USDCHF">USD/CHF — US Dollar / Swiss Franc</option>
+      <option value="USDSEK">USD/SEK — US Dollar / Swedish Krona</option>
+      <option value="USDNOK">USD/NOK — US Dollar / Norwegian Krone</option>
+      <option value="USDHKD">USD/HKD — US Dollar / Hong Kong Dollar</option>
+      <option value="USDCNY">USD/CNY — US Dollar / Chinese Yuan</option>
+      <option value="USDSAR">USD/SAR — US Dollar / Saudi Riyal</option>
+      <option value="USDBRL">USD/BRL — US Dollar / Brazilian Real</option>
+    </select>
+
+    <div class="live-quote-box">
+      <div class="lq-label">Live Quote</div>
+      <div class="lq-prices">
+        <div class="lq-side bid"><div class="lq-side-label">Sell / Bid</div><div class="lq-price" id="quoteBid">—</div></div>
+        <div class="lq-side ask"><div class="lq-side-label">Buy / Ask</div><div class="lq-price" id="quoteAsk">—</div></div>
+      </div>
+      <div class="lq-spread" id="quoteSpread">Spread: — pips</div>
+      <div class="fwd-strip" id="fwdStrip">
+        <div class="fwd-strip-label">Forward Rates</div>
+        <div class="fwd-row">
+          <span class="fwd-tenor"></span>
+          <span class="fwd-col-hdr">Rate</span>
+          <span class="fwd-col-hdr">Pts</span>
+          <span class="fwd-col-hdr">Ann%</span>
+        </div>
+        <div id="fwdRow1M" class="fwd-row"></div>
+        <div id="fwdRow3M" class="fwd-row"></div>
+        <div id="fwdRow6M" class="fwd-row"></div>
+        <div id="fwdRow12M" class="fwd-row"></div>
+      </div>
+    </div>
+
+    <label class="field-label">Position Size (USD)</label>
+    <input type="number" class="field-input" id="orderSize" value="5000" min="100" max="50000" step="500">
+
+    <label class="field-label">Direction</label>
+    <div class="dir-buttons">
+      <button class="btn-buy active" id="btnBuy" onclick="setDir('BUY')">▲ BUY</button>
+      <button class="btn-sell" id="btnSell" onclick="setDir('SELL')">▼ SELL</button>
+    </div>
+
+    <label class="field-label">Reason for Trade <span style="color:var(--text3)">(required)</span></label>
+    <textarea class="field-input" id="orderReason" placeholder="e.g. US inflation data came in higher than expected — anticipating dollar strength against euro..."></textarea>
+
+    <button class="submit-btn" onclick="placeOrder()">Execute Trade</button>
+    <div class="form-note">Max position: $50,000 · Min: $100<br>Reason must be at least 10 words</div>
+  </div>
+</div>
+
+<!-- CENTRE -->
+<div class="centre-panel">
+  <div class="chart-area">
+    <div class="chart-header">
+      <div>
+        <div class="chart-pair-name" id="chartPairName">EUR/USD</div>
+        <div style="font-size:10px;color:var(--text3)" id="chartPairDesc">Euro / US Dollar</div>
+      </div>
+      <div style="text-align:right">
+        <div class="chart-price-big" id="chartPriceBig">—</div>
+        <div class="chart-change" id="chartChange">—</div>
+      </div>
+    </div>
+    <canvas class="chart-canvas" id="priceChart"></canvas>
+    <div class="chart-range-btns">
+      <button class="range-btn active" onclick="setRange(50,this)">1D</button>
+      <button class="range-btn" onclick="setRange(150,this)">3D</button>
+      <button class="range-btn" onclick="setRange(300,this)">1W</button>
+    </div>
+  </div>
+
+  <div class="centre-tabs">
+    <div class="centre-tab active" onclick="showCentreTab('positions',this)">Open Positions</div>
+    <div class="centre-tab" onclick="showCentreTab('history',this)">Trade History</div>
+    <div class="centre-tab" onclick="showCentreTab('news',this)">Market Events</div>
+    <div class="centre-tab" onclick="showCentreTab('reflect',this)">Reflections</div>
+    <div class="centre-tab" onclick="showCentreTab('quotes',this)">Last Quotes</div>
+    <div class="centre-tab" onclick="showCentreTab('forwards',this)">Forward Rates</div>
+    <div class="centre-tab" onclick="showCentreTab('learn',this)">Key Concepts</div>
+  </div>
+
+  <div class="centre-content">
+    <div class="tab-page active" id="tab-positions"><div id="positionsContent"></div></div>
+    <div class="tab-page" id="tab-history"><div id="historyContent"></div></div>
+    <div class="tab-page" id="tab-news"><div id="newsContent"></div></div>
+    <div class="tab-page" id="tab-reflect"><div id="reflectContent"></div></div>
+    <div class="tab-page" id="tab-quotes"><div id="quotesContent"></div></div>
+    <div class="tab-page" id="tab-forwards"><div id="forwardsContent"></div></div>
+    <div class="tab-page" id="tab-learn"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="learnContent"></div></div>
+  </div>
+</div>
+
+<!-- RIGHT: STATS -->
+<div class="right-panel">
+  <div class="pnl-strip">
+    <div class="pnl-cell"><div class="pnl-cell-label">Total P&L</div><div class="pnl-cell-val gold" id="statTotalPnl">$0.00</div></div>
+    <div class="pnl-cell"><div class="pnl-cell-label">Open P&L</div><div class="pnl-cell-val" id="statOpenPnl">$0.00</div></div>
+    <div class="pnl-cell"><div class="pnl-cell-label">Win Rate</div><div class="pnl-cell-val" id="statWinRate">—</div></div>
+    <div class="pnl-cell"><div class="pnl-cell-label">Trades</div><div class="pnl-cell-val" id="statTrades">0</div></div>
+  </div>
+  <div class="perf-section">
+    <div class="perf-title">Performance Breakdown</div>
+    <div class="perf-item">
+      <div class="perf-item-label"><span>Best Trade</span><span id="bestTrade" style="color:var(--green2)">—</span></div>
+      <div class="perf-bar-track"><div class="perf-bar-fill bar-green" id="bestBar" style="width:0%"></div></div>
+    </div>
+    <div class="perf-item">
+      <div class="perf-item-label"><span>Worst Trade</span><span id="worstTrade" style="color:var(--red2)">—</span></div>
+      <div class="perf-bar-track"><div class="perf-bar-fill bar-red" id="worstBar" style="width:0%"></div></div>
+    </div>
+    <div class="perf-item">
+      <div class="perf-item-label"><span>Capital Used</span><span id="capitalUsed" style="color:var(--gold2)">0%</span></div>
+      <div class="perf-bar-track"><div class="perf-bar-fill bar-gold" id="capitalBar" style="width:0%"></div></div>
+    </div>
+    <div class="perf-item">
+      <div class="perf-item-label"><span>Trades Logged</span><span id="tradesLogged" style="color:var(--blue2)">0 / 6 min</span></div>
+      <div class="perf-bar-track"><div class="perf-bar-fill bar-blue" id="tradesBar" style="width:0%"></div></div>
+    </div>
+    <div class="perf-item">
+      <div class="perf-item-label"><span>Hedges Placed</span><span id="hedgesPlaced" style="color:var(--teal)">0</span></div>
+      <div class="perf-bar-track"><div class="perf-bar-fill bar-teal" id="hedgesBar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="notes-area">
+    <div class="notes-title">Learning Journal</div>
+    <div id="learningNotes">
+      <div class="empty-state"><div class="empty-state-icon">📓</div>Your trade reasons appear here after each trade.<br>This becomes your learning journal.</div>
+    </div>
+  </div>
+  <button class="export-btn" onclick="exportLog()">⬇ Export Trade Log (CSV)</button>
+</div>
+
+</div>
+</div>
+
+<!-- REFLECTION MODAL -->
+<div class="modal-overlay" id="reflectModal">
+  <div class="modal-box">
+    <div class="modal-title">💭 Trade Reflection</div>
+    <div class="modal-trade-summary" id="reflectTradeSummary"></div>
+    <div id="reflectQuestionArea"></div>
+    <div class="modal-footer">
+      <span class="modal-skip" onclick="skipReflection()">Skip for now</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="modal-progress" id="reflectProgress">Q 1 / 3</span>
+        <button class="modal-next" id="reflectNextBtn" onclick="nextReflectQ()">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GROUP ASSIGNMENT MODAL -->
+<div class="assign-overlay" id="assignOverlay" style="display:none">
+  <div class="assign-box">
+    <div class="assign-title">International Finance — FX Trading Simulation</div>
+    <div class="assign-heading">Your Group Assignment</div>
+    <div class="assign-pair" id="assignPair">—</div>
+    <div class="assign-pair-desc" id="assignDesc">—</div>
+    <div class="assign-group" id="assignGroup">—</div>
+    <div class="assign-grid" id="assignGrid"></div>
+    <div>
+      <button class="assign-btn" onclick="closeAssignment()">Start Trading →</button>
+      <button class="assign-btn-sec" onclick="reassign()">Re-roll</button>
+    </div>
+    <div class="assign-note">Your assigned pair has been set as the active pair in the simulator.<br>Use the <strong style="color:var(--text2)">🏢 Hedge Mode</strong> button to see your corporate hedge scenario.</div>
+  </div>
+</div>
+
+<!-- ROOM ENTRY OVERLAY -->
+<div class="room-overlay" id="roomOverlay">
+  <div class="room-box">
+    <div class="room-logo">International Finance — FX Trading Simulator</div>
+    <div class="room-title">Enter Room Code</div>
+    <div class="room-sub">Each group of 2 shares a room code.<br>Both partners enter the same code to sync trades in real time.</div>
+    <input class="room-input" id="roomCodeInput" maxlength="20" placeholder="e.g. GROUP-3 or INTLFIN-5" autocomplete="off" spellcheck="false"
+      onkeydown="if(event.key==='Enter') joinRoom()">
+    <button class="room-btn" id="roomJoinBtn" onclick="joinRoom()">Join Room →</button>
+    <div class="room-status" id="roomStatus"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════
+const PAIRS = {
+  EURUSD:{name:'EUR/USD',desc:'Euro / US Dollar',              base:1.0850,vol:0.0003,pip:0.0001,decimals:4},
+  GBPUSD:{name:'GBP/USD',desc:'British Pound / US Dollar',     base:1.2720,vol:0.0004,pip:0.0001,decimals:4},
+  USDJPY:{name:'USD/JPY',desc:'US Dollar / Japanese Yen',      base:149.50,vol:0.05,  pip:0.01,  decimals:2},
+  USDCAD:{name:'USD/CAD',desc:'US Dollar / Canadian Dollar',   base:1.3580,vol:0.0003,pip:0.0001,decimals:4},
+  AUDUSD:{name:'AUD/USD',desc:'Australian Dollar / US Dollar', base:0.6530,vol:0.0003,pip:0.0001,decimals:4},
+  NZDUSD:{name:'NZD/USD',desc:'New Zealand Dollar / US Dollar',base:0.6050,vol:0.0003,pip:0.0001,decimals:4},
+  USDCHF:{name:'USD/CHF',desc:'US Dollar / Swiss Franc',       base:0.8980,vol:0.0003,pip:0.0001,decimals:4},
+  USDSEK:{name:'USD/SEK',desc:'US Dollar / Swedish Krona',     base:10.420,vol:0.015, pip:0.001, decimals:3},
+  USDNOK:{name:'USD/NOK',desc:'US Dollar / Norwegian Krone',   base:10.550,vol:0.018, pip:0.001, decimals:3},
+  USDHKD:{name:'USD/HKD',desc:'US Dollar / Hong Kong Dollar',  base:7.8200,vol:0.002, pip:0.0001,decimals:4},
+  USDCNY:{name:'USD/CNY',desc:'US Dollar / Chinese Yuan',        base:7.2400,vol:0.008, pip:0.001, decimals:3},
+  USDSAR:{name:'USD/SAR',desc:'US Dollar / Saudi Riyal',        base:3.7500,vol:0.001, pip:0.0001,decimals:4},
+  USDBRL:{name:'USD/BRL',desc:'US Dollar / Brazilian Real',       base:4.9700,vol:0.012, pip:0.001, decimals:3},
+};
+
+const MARKET_EVENTS = [
+  {time:'Day 1 — 10:00',pair:'EURUSD',headline:'ECB holds interest rates steady, signals caution on further cuts',impact:'high',effect:{EURUSD:-0.0012,GBPUSD:-0.0006},session:'London'},
+  {time:'Day 1 — 14:30',pair:'USDJPY',headline:'US Non-Farm Payrolls beats expectations — 220k vs 180k forecast',impact:'high',effect:{USDJPY:+0.45,USDCAD:+0.0018,USDSEK:+0.12,USDNOK:+0.14},session:'New York'},
+  {time:'Day 1 — 23:30',pair:'AUDUSD',headline:'RBA meeting minutes signal rates on hold — AUD falls on dovish tone',impact:'med',effect:{AUDUSD:-0.0018,NZDUSD:-0.0012},session:'Sydney'},
+  {time:'Day 2 — 02:00',pair:'USDJPY',headline:'Japan trade surplus widens unexpectedly — yen strengthens in thin Asian trade',impact:'med',effect:{USDJPY:-0.32,USDHKD:-0.0008},session:'Tokyo'},
+  {time:'Day 2 — 09:00',pair:'GBPUSD',headline:'UK CPI inflation falls to 3.2% — below Bank of England target zone',impact:'high',effect:{GBPUSD:-0.0035,USDCHF:-0.0008},session:'London'},
+  {time:'Day 2 — 15:00',pair:'USDSEK',headline:'Sweden Riksbank cuts rates 25bps, signals more easing ahead',impact:'med',effect:{USDSEK:+0.085,USDNOK:+0.040},session:'New York'},
+  {time:'Day 2 — 22:00',pair:'NZDUSD',headline:'New Zealand Q4 GDP beats forecast — kiwi rallies in Sydney open',impact:'med',effect:{NZDUSD:+0.0025,AUDUSD:+0.0010},session:'Sydney'},
+  {time:'Day 3 — 03:30',pair:'AUDUSD',headline:'China manufacturing PMI disappoints — 48.2 vs 50.5 expected',impact:'med',effect:{AUDUSD:-0.0025,NZDUSD:-0.0020},session:'Tokyo'},
+  {time:'Day 3 — 08:30',pair:'USDCHF',headline:'Swiss National Bank intervenes to weaken franc amid deflation concerns',impact:'high',effect:{USDCHF:+0.0045,EURUSD:+0.0008},session:'London'},
+  {time:'Day 3 — 13:00',pair:'EURUSD',headline:'Federal Reserve minutes show hawkish tone — rate cuts pushed back',impact:'high',effect:{EURUSD:-0.0018,GBPUSD:-0.0020,USDCHF:+0.0015},session:'New York'},
+  {time:'Day 3 — 21:30',pair:'USDCNY',headline:"People's Bank of China sets yuan fixing stronger than expected, surprises markets",impact:'high',effect:{USDCNY:-0.045,USDHKD:-0.0015},session:'Sydney'},
+  {time:'Day 4 — 01:00',pair:'USDJPY',headline:'Bank of Japan hints at policy normalisation — first rate hike in decades',impact:'high',effect:{USDJPY:-0.85,USDHKD:-0.0020},session:'Tokyo'},
+  {time:'Day 4 — 10:30',pair:'GBPUSD',headline:'UK GDP growth revised up to 0.4% — stronger than expected',impact:'med',effect:{GBPUSD:+0.0028,EURUSD:+0.0010},session:'London'},
+  {time:'Day 4 — 14:30',pair:'USDBRL',headline:'Brazilian central bank raises rates 50bps to combat persistent inflation',impact:'high',effect:{USDBRL:-0.055},session:'New York'},
+  {time:'Day 4 — 23:00',pair:'USDSAR',headline:'Saudi Arabia reaffirms riyal peg to USD amid oil revenue surge',impact:'low',effect:{USDSAR:+0.0002},session:'Sydney'},
+  {time:'Day 5 — 03:00',pair:'USDSEK',headline:'Sweden Q1 industrial output falls sharply — krona weakens in Asian hours',impact:'med',effect:{USDSEK:+0.060,USDNOK:+0.030},session:'Tokyo'},
+  {time:'Day 5 — 09:30',pair:'EURUSD',headline:'Eurozone PMI composite beats forecast — euro rallies at London open',impact:'med',effect:{EURUSD:+0.0015,GBPUSD:+0.0010},session:'London'},
+  {time:'Day 5 — 16:00',pair:'NZDUSD',headline:'New Zealand Reserve Bank holds rates, strikes hawkish tone on inflation',impact:'med',effect:{NZDUSD:+0.0022,AUDUSD:+0.0012},session:'New York'},
+];
+
+const CONCEPTS = [
+  {title:'Exchange Rate',body:'The price of one currency expressed in terms of another. EUR/USD = 1.0850 means 1 euro buys 1.0850 US dollars. The first currency is the base, the second is the quote.'},
+  {title:'Bid / Ask Spread',body:'The bid is the price you sell at. The ask is the price you buy at. The difference is the spread — the broker\'s profit. Lower spreads = better liquidity.'},
+  {title:'Going Long (Buy)',body:'Buying the base currency expecting it will rise. If you buy EUR/USD at 1.0850 and it rises to 1.0900, you profit 50 pips.'},
+  {title:'Going Short (Sell)',body:'Selling the base currency expecting it to fall. If you sell EUR/USD at 1.0850 and it falls to 1.0800, you profit 50 pips.'},
+  {title:'A Pip',body:'The smallest standard price movement. For most pairs (4 decimals) 1 pip = 0.0001. For USD/JPY (2 decimals) 1 pip = 0.01. A $10,000 position earns ~$1 per pip.'},
+  {title:'Interest Rate Parity',body:'Countries with higher interest rates tend to attract capital and have stronger currencies. When the Fed raises rates, the dollar typically strengthens.'},
+  {title:'Purchasing Power Parity',body:'In the long run, exchange rates adjust so identical goods cost the same across countries. PPP explains long-run trends but is a poor short-run predictor.'},
+  {title:'FX Exposure & Hedging',body:'A company with foreign revenues faces transaction exposure — currency moves can reduce the home-currency value of those earnings. Hedging locks in an exchange rate and removes that risk.'},
+];
+
+// Corporate hedge scenarios — one per pair
+// correctDir: the direction needed ON THIS PAIR to hedge the exposure
+const HEDGE_SCENARIOS = {
+  EURUSD:{company:"GlobalSnack Inc.",title:"US exporter receiving €40,000 in 60 days",body:"GlobalSnack Inc. (a US company) sold snack goods to a German retailer and will receive €40,000 in 60 days. They are worried the euro might weaken before they convert those euros to dollars.",prompt:"Which direction should GlobalSnack trade EUR/USD to hedge? Think: if EUR falls, what happens to their dollar proceeds — and what trade offsets that?",correctDir:"SELL",explanation:"GlobalSnack will receive euros and sell them for USD. If EUR falls, each euro converts to fewer dollars — that is their risk. The hedge: SELL EUR/USD now. If EUR falls, the short position profits, offsetting the lower conversion rate on their actual receipt."},
+  GBPUSD:{company:"TechBrew Ltd.",title:"US importer paying £30,000 in 45 days",body:"TechBrew Ltd. (a US company) ordered equipment from a UK supplier. They must pay £30,000 in 45 days. They are worried the pound might strengthen, making the payment more expensive in USD.",prompt:"Which direction should TechBrew trade GBP/USD to hedge? Think: if GBP rises, their payment costs more USD — what trade locks in today's rate?",correctDir:"BUY",explanation:"TechBrew needs to buy GBP in 45 days. If GBP rises, that purchase costs more USD — that is their risk. The hedge: BUY GBP/USD now. If GBP rises, the long position profits, offsetting the higher cost of their pound payment."},
+  USDJPY:{company:"Sakura Motors USA",title:"US manufacturer paying ¥5,000,000 in 30 days",body:"Sakura Motors USA owes ¥5,000,000 to a Japanese parts supplier, due in 30 days. They are worried the yen might strengthen (USD/JPY falls), making the yen more expensive in dollar terms.",prompt:"Which direction should Sakura trade USD/JPY to hedge? Remember: USD/JPY falling means yen is getting stronger — more expensive for them.",correctDir:"SELL",explanation:"Sakura needs to buy yen (sell USD) in 30 days. If USD/JPY falls, buying yen costs more USD — that is their risk. The hedge: SELL USD/JPY now. If USD/JPY falls, the short position profits, offsetting the higher yen cost."},
+  USDCAD:{company:"NorthernPine Energy",title:"US parent repatriating CAD 80,000 in profits",body:"NorthernPine Energy (US parent) has a Canadian subsidiary that generated CAD 80,000 in profit to be converted to USD in 60 days. They worry CAD might weaken (USD/CAD rises) before conversion.",prompt:"Which direction should NorthernPine trade USD/CAD to hedge? Think: if CAD weakens (USD/CAD rises), they get fewer dollars from their CAD proceeds.",correctDir:"BUY",explanation:"NorthernPine will receive CAD and sell it for USD. If USD/CAD rises (CAD weakens), each CAD converts to fewer USD — that is their risk. The hedge: BUY USD/CAD now. If USD/CAD rises, the long position profits, offsetting the weaker CAD conversion."},
+  AUDUSD:{company:"Outback Resources",title:"Australian miner receiving USD 50,000 in 30 days",body:"Outback Resources (an Australian company) sold iron ore invoiced in USD. They will receive $50,000 USD in 30 days and must convert to AUD. They worry USD might weaken (AUD/USD rises), reducing their AUD proceeds.",prompt:"Which direction should Outback trade AUD/USD to hedge? Think: if AUD/USD rises, each USD they receive converts to fewer AUD.",correctDir:"BUY",explanation:"Outback receives USD and converts to AUD. If AUD/USD rises, each USD buys fewer AUD — that is their risk. The hedge: BUY AUD/USD now. If AUD/USD rises, the long position profits, offsetting the reduced AUD conversion on their USD receipt."},
+  NZDUSD:{company:"KiwiExport Ltd.",title:"NZ dairy exporter receiving USD 60,000 in 45 days",body:"KiwiExport Ltd. (a New Zealand company) sold dairy products to a US buyer and will receive USD 60,000 in 45 days. They must convert those dollars to NZD. They worry USD might weaken (NZD/USD rises), reducing their NZD proceeds.",prompt:"Which direction should KiwiExport trade NZD/USD to hedge? Think: if NZD/USD rises, each USD they receive converts to fewer NZD.",correctDir:"BUY",explanation:"KiwiExport receives USD and converts to NZD. If NZD/USD rises, each USD buys fewer NZD — that is their risk. The hedge: BUY NZD/USD now. If NZD/USD rises, the long position profits, offsetting the lower NZD conversion on their USD receipt."},
+  USDCHF:{company:"Alpine Precision AG",title:"Swiss manufacturer paying USD 80,000 for US components",body:"Alpine Precision AG (a Swiss company) ordered manufacturing components from a US supplier. They must pay USD 80,000 in 30 days. They worry the USD might strengthen (USD/CHF rises), making the payment more expensive in francs.",prompt:"Which direction should Alpine trade USD/CHF to hedge? Think: if USD/CHF rises, buying dollars costs more francs.",correctDir:"BUY",explanation:"Alpine needs to buy USD in 30 days. If USD/CHF rises, buying USD costs more CHF — that is their risk. The hedge: BUY USD/CHF now. If USD/CHF rises, the long position profits, offsetting the higher USD cost."},
+  USDSEK:{company:"NordicRetail AB",title:"Swedish importer paying USD 100,000 for US goods",body:"NordicRetail AB (a Swedish company) ordered consumer electronics from a US supplier, payable in USD 100,000 in 60 days. They worry the dollar might strengthen (USD/SEK rises), making the purchase more expensive in kronor.",prompt:"Which direction should NordicRetail trade USD/SEK to hedge? Think: if USD/SEK rises, buying dollars costs more kronor.",correctDir:"BUY",explanation:"NordicRetail needs to buy USD in 60 days. If USD/SEK rises, that purchase costs more SEK — that is their risk. The hedge: BUY USD/SEK now. If USD/SEK rises, the long position profits, offsetting the higher dollar cost."},
+  USDNOK:{company:"Fjord Shipping AS",title:"Norwegian firm receiving USD 120,000 in 45 days",body:"Fjord Shipping AS (a Norwegian company) provided services to a US client and will receive USD 120,000 in 45 days. They must convert to NOK. They worry USD might weaken (USD/NOK falls), reducing their krone proceeds.",prompt:"Which direction should Fjord Shipping trade USD/NOK to hedge? Think: if USD/NOK falls, each dollar converts to fewer krone.",correctDir:"SELL",explanation:"Fjord Shipping receives USD and converts to NOK. If USD/NOK falls, each USD buys fewer NOK — that is their risk. The hedge: SELL USD/NOK now. If USD/NOK falls, the short position profits, offsetting the lower krone conversion."},
+  USDHKD:{company:"Pacific Trade Co.",title:"HK importer paying USD 200,000 for US goods",body:"Pacific Trade Co. (a Hong Kong company) is importing US goods and must pay USD 200,000 in 30 days. The HKD is pegged near 7.80, but minor fluctuations still affect costs. They want to lock in today's rate.",prompt:"Which direction should Pacific Trade trade USD/HKD to hedge? Think: if USD/HKD rises slightly, buying dollars costs more HKD.",correctDir:"BUY",explanation:"Pacific Trade needs to buy USD in 30 days. If USD/HKD rises, buying USD costs more HKD — that is their risk. The hedge: BUY USD/HKD now. This locks in close to today's rate. Note: because HKD is pegged, this is a low-volatility hedge — a good example of how pegged currencies reduce (but do not eliminate) FX risk."},
+  USDCNY:{company:"SilkRoute Imports LLC",title:"US importer paying CNY 500,000 for Chinese goods",body:"SilkRoute Imports LLC (a US company) sources manufactured goods from a Chinese supplier. They must pay CNY 500,000 in 60 days. They worry the yuan might strengthen (USD/CNY falls), making the payment more expensive in USD. Note: China manages the yuan within a daily band — it does not float freely like EUR or GBP.",prompt:"Which direction should SilkRoute trade USD/CNY to hedge? Think: if USD/CNY falls, buying yuan costs more USD. Consider also: how does a managed currency affect hedging vs. a freely floating one?",correctDir:"SELL",explanation:"SilkRoute needs to buy yuan (sell USD) in 60 days. If USD/CNY falls, buying yuan costs more USD — that is their risk. The hedge: SELL USD/CNY now. If USD/CNY falls, the short position profits, offsetting the higher yuan cost."},
+  USDSAR:{company:"Gulf Construction Co.",title:"US contractor receiving SAR 750,000 in 45 days",body:"Gulf Construction Co. (a US company) completed infrastructure work in Saudi Arabia and will receive SAR 750,000 in 45 days. They must convert to USD. The riyal is pegged to the dollar at 3.75, so exchange rate risk is very low.",prompt:"Which direction should Gulf Construction trade USD/SAR to hedge? Think: the riyal is pegged to the dollar — does a hedge even make sense here?",correctDir:"SELL",explanation:"With the SAR pegged tightly to USD at 3.75, there is virtually no exchange rate risk. In practice, Gulf Construction would not need to hedge. This scenario illustrates an important concept: a credible currency peg eliminates transaction exposure. The risk shifts to the rare but severe risk of a peg break, which is a political risk rather than a market risk."},
+  USDBRL:{company:"CaféBrasil Imports LLC",title:"US importer paying BRL 300,000 for Brazilian coffee",body:"CaféBrasil Imports LLC (a US company) agreed to purchase BRL 300,000 worth of Brazilian coffee beans from a supplier, payable in 60 days. They worry the real might strengthen (USD/BRL falls), making the purchase more expensive in USD.",prompt:"Which direction should CaféBrasil trade USD/BRL to hedge? Think: if USD/BRL falls, buying reais costs more USD.",correctDir:"SELL",explanation:"CaféBrasil needs to buy reais (sell USD) in 60 days. If USD/BRL falls, buying reais costs more USD — that is their risk. The hedge: SELL USD/BRL now. If USD/BRL falls, the short position profits, offsetting the higher real cost."},
+};
+
+// Guided reflection questions
+
+// Guided reflection questions shown after every trade close
+const REFLECT_QUESTIONS = [
+  'Did the market move the way you expected when you placed this trade? Describe what happened and why you think the price moved as it did.',
+  'Looking back at your original reasoning, was it sound? What would you do differently — or the same — next time?',
+  'What is one thing this trade taught you about how FX markets respond to economic news or events?',
+];
+
+
+// ════════════════════════════════════════════════
+// INTEREST RATES & FORWARD PRICES (CIP)
+// ════════════════════════════════════════════════
+const RATES = {
+  USD:5.33, EUR:3.15, GBP:5.20, JPY:0.10, CAD:4.75, AUD:4.35,
+  NZD:5.50, CHF:1.00, SEK:3.25, NOK:4.50, HKD:5.33, CNY:3.45,
+  SAR:6.00, BRL:12.25,
+};
+const PAIR_CCY = {
+  EURUSD:['EUR','USD'],GBPUSD:['GBP','USD'],USDJPY:['USD','JPY'],
+  USDCAD:['USD','CAD'],AUDUSD:['AUD','USD'],NZDUSD:['NZD','USD'],
+  USDCHF:['USD','CHF'],USDSEK:['USD','SEK'],USDNOK:['USD','NOK'],
+  USDHKD:['USD','HKD'],USDCNY:['USD','CNY'],USDSAR:['USD','SAR'],
+  USDBRL:['USD','BRL'],
+};
+const CCY_REGIME={USDHKD:'peg',USDCNY:'managed',USDSAR:'peg'};
+
+// CIP: F = S * (1 + r_quote*T) / (1 + r_base*T)
+function calcForward(pair,spot,months){
+  const [b,q]=PAIR_CCY[pair]||['USD','USD'];
+  const rb=(RATES[b]||0)/100, rq=(RATES[q]||0)/100, T=months/12;
+  return spot*(1+rq*T)/(1+rb*T);
+}
+function fwdPoints(pair,spot,fwd){return Math.round((fwd-spot)/PAIRS[pair].pip);}
+function fwdAnnualPct(spot,fwd,months){return((fwd-spot)/spot)*(12/months)*100;}
+
+function applyRateDrift(idx){
+  const drifts=[
+    {EUR:-0.05},{USD:+0.03},{GBP:-0.10},{SEK:-0.25},{},{USD:+0.05},
+    {CHF:+0.08},{JPY:+0.10},{GBP:+0.05},{NZD:+0.05},{CNY:-0.05},{BRL:+0.15},{}
+  ];
+  const d=drifts[idx]||{};
+  Object.entries(d).forEach(([c,v])=>{if(RATES[c]!==undefined)RATES[c]=+Math.max(0,RATES[c]+v).toFixed(2);});
+}
+
+function renderFwdStrip(pair){
+  const spot=state.prices[pair]; const p=PAIRS[pair];
+  [{id:'1M',m:1},{id:'3M',m:3},{id:'6M',m:6},{id:'12M',m:12}].forEach(({id,m})=>{
+    const el=document.getElementById('fwdRow'+id); if(!el) return;
+    const fwd=calcForward(pair,spot,m);
+    const pts=fwdPoints(pair,spot,fwd);
+    const ann=fwdAnnualPct(spot,fwd,m);
+    const cls=pts>=0?'fwd-pts prem':'fwd-pts disc';
+    el.innerHTML=`<span class="fwd-tenor">${id}</span>`+
+      `<span class="fwd-rate">${fwd.toFixed(p.decimals)}</span>`+
+      `<span class="${cls}">${pts>=0?'+':''}${pts}</span>`+
+      `<span class="${cls}">${ann>=0?'+':''}${ann.toFixed(2)}%</span>`;
+  });
+}
+
+function renderForwardsTab(){
+  const el=document.getElementById('forwardsContent'); if(!el) return;
+  const [bc,qc]=PAIR_CCY[state.activePair]||['USD','USD'];
+  const rb=RATES[bc]||0, rq=RATES[qc]||0;
+  const spot=state.prices[state.activePair]; const ap=PAIRS[state.activePair];
+  const regime=CCY_REGIME[state.activePair];
+  const reason=rq>rb
+    ?`${qc} rates (${rq.toFixed(2)}%) > ${bc} rates (${rb.toFixed(2)}%) — ${bc} trades at a forward discount. CIP prevents arbitrage by requiring the higher-rate currency to weaken in the forward market.`
+    :rb>rq
+    ?`${bc} rates (${rb.toFixed(2)}%) > ${qc} rates (${rq.toFixed(2)}%) — ${bc} trades at a forward premium. Investors in ${bc} earn more interest, so the forward price compensates with a discount on the forward.`
+    :`${bc} and ${qc} rates are equal (${rb.toFixed(2)}%) — no forward premium or discount.`;
+  const regNote=regime==='peg'
+    ?'<div style="margin-top:6px;font-size:10px;color:var(--gold2)">⚠ Pegged rate: forward markets on this pair are thin. The peg constrains theoretical forward rates.</div>'
+    :regime==='managed'
+    ?'<div style="margin-top:6px;font-size:10px;color:var(--blue2)">⚠ Managed float: the PBOC daily fixing band limits how far forwards can diverge from the official rate.</div>'
+    :'';
+
+  const tenors=[1,3,6,12];
+  const trows=Object.entries(PAIRS).map(([code,pr])=>{
+    const s=state.prices[code];
+    const reg=CCY_REGIME[code];
+    const rtag=reg==='peg'?'<span class="fwd-regime-tag tag-peg">Peg</span>'
+              :reg==='managed'?'<span class="fwd-regime-tag tag-mgd">Managed</span>':'';
+    const fwds=tenors.map(m=>calcForward(code,s,m));
+    const ann12=fwdAnnualPct(s,fwds[3],12);
+    const act=code===state.activePair?'background:rgba(0,212,255,0.06);':'';
+    return `<tr style="${act}">
+      <td>${pr.name}${rtag}</td>
+      <td>${s.toFixed(pr.decimals)}</td>
+      ${fwds.map((f)=>{const pts=fwdPoints(code,s,f);const cls=pts>=0?'fwd-prem':'fwd-disc';
+        return `<td class="${cls}">${f.toFixed(pr.decimals)}<br><span style="font-size:9px">${pts>=0?'+':''}${pts}pts</span></td>`;}).join('')}
+      <td class="${ann12>=0?'fwd-prem':'fwd-disc'}">${ann12>=0?'+':''}${ann12.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+
+  const rateData=[
+    ['USD','US Dollar','Fed Funds'],['EUR','Euro','ECB Deposit'],['GBP','British Pound','BoE Base'],
+    ['JPY','Japanese Yen','BoJ Policy'],['CAD','Canadian Dollar','BoC Rate'],['AUD','Australian Dollar','RBA Cash'],
+    ['NZD','New Zealand Dollar','RBNZ OCR'],['CHF','Swiss Franc','SNB Rate'],['SEK','Swedish Krona','Riksbank'],
+    ['NOK','Norwegian Krone','Norges Bank'],['HKD','HK Dollar','HKMA (=Fed)'],['CNY','Chinese Yuan','PBOC LPR'],
+    ['SAR','Saudi Riyal','SAMA Rate'],['BRL','Brazilian Real','Selic'],
+  ];
+  const rrows=rateData.map(([c,n,bench])=>{
+    const r=RATES[c]; const hi=r>RATES.USD,lo=r<RATES.USD;
+    const flag=hi?'<span class="rate-flag flag-hi">Higher</span>'
+               :lo?'<span class="rate-flag flag-lo">Lower</span>'
+               :'<span class="rate-flag" style="background:var(--border2);color:var(--text3)">= USD</span>';
+    return `<tr><td>${c}</td><td style="font-family:\'Barlow\',sans-serif">${n}</td>
+      <td style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--text3)">${bench}</td>
+      <td><div class="rate-cell">${r.toFixed(2)}%${flag}</div></td></tr>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="irp-explainer">
+      <div class="irp-explainer-title">Covered Interest Rate Parity (CIP)</div>
+      <div class="irp-explainer-body">Forward exchange rates are derived from today's spot rate and the interest rate differential. A currency with <strong style="color:var(--green2)">higher rates</strong> trades at a <strong>forward discount</strong>; a currency with <strong style="color:var(--red2)">lower rates</strong> trades at a <strong>forward premium</strong>. This prevents risk-free arbitrage between spot FX and money markets.</div>
+      <div class="irp-formula">F = S \xd7 (1 + r_quote \xd7 T) / (1 + r_base \xd7 T)</div>
+      <div class="irp-explainer-body" style="margin-top:6px"><strong style="color:var(--cyan)">${ap.name} right now:</strong> ${reason}${regNote}</div>
+    </div>
+    <div style="font-family:Barlow Condensed,sans-serif;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Forward Curve — All Pairs</div>
+    <table class="fwd-table"><thead><tr>
+      <th>Pair</th><th>Spot</th><th>1M Fwd</th><th>3M Fwd</th><th>6M Fwd</th><th>12M Fwd</th><th>12M Ann%</th>
+    </tr></thead><tbody>${trows}</tbody></table>
+    <div style="font-family:Barlow Condensed,sans-serif;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;margin-top:16px">Central Bank Policy Rates</div>
+    <table class="fwd-table"><thead><tr>
+      <th>CCY</th><th>Currency</th><th>Benchmark</th><th style="text-align:right">Rate</th>
+    </tr></thead><tbody>${rrows}</tbody></table>
+    <div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5">Rates are approximate as of early 2025 and drift slowly as market events fire during the simulation. Forward rates update live with the spot price.</div>`;
+}
+
+
+// ════════════════════════════════════════════════
+// SIM SPEED CONTROL
+// ════════════════════════════════════════════════
+// Multiplier compresses real time: 1x = 1 sec/min, 10x = 10 secs/min, 60x = 1 min/min
+const SPEEDS = [
+  {label:'1\xd7', mult:1},
+  {label:'10\xd7', mult:10},
+  {label:'60\xd7', mult:60},
+  {label:'300\xd7', mult:300},
+];
+let speedIdx = 0;
+
+function cycleSpeed(){
+  speedIdx = (speedIdx + 1) % SPEEDS.length;
+  const s = SPEEDS[speedIdx];
+  document.getElementById('speedBtn').textContent = '\u23f1 ' + s.label;
+  // Reset speed anchor to now so time doesn't jump on switch
+  state.sessionStartTs = Date.now();
+  saveState();
+}
+
+function getSimElapsedMins(){
+  return Math.floor((Date.now() - state.sessionStartTs) / 1000) * SPEEDS[speedIdx].mult;
+}
+
+
+// ── 12-hour time formatter ──────────────────────────────────────
+function to12h(h, m){
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12  = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+// ════════════════════════════════════════════════
+// FIREBASE + ROOM CODE
+// ════════════════════════════════════════════════
+const FB_CONFIG = {
+  apiKey: "AIzaSyCjgraSUtveFYRO50qDSuUVCmb42zDlxnU",
+  authDomain: "my-project-1577995916726.firebaseapp.com",
+  databaseURL: "https://my-project-1577995916726-default-rtdb.firebaseio.com",
+  projectId: "my-project-1577995916726",
+  storageBucket: "my-project-1577995916726.firebasestorage.app",
+  messagingSenderId: "503294518028",
+  appId: "1:503294518028:web:4e02ab026749c92c381f29"
+};
+
+window._fbDb = null;
+window._roomCode = null;
+window._fbUnsubscribe = null;
+
+// Load Firebase SDK dynamically then initialise
+function loadFirebase(callback){
+  const s1 = document.createElement('script');
+  s1.src = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js';
+  s1.onload = function(){
+    const s2 = document.createElement('script');
+    s2.src = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js';
+    s2.onload = function(){
+      try{
+        const app = firebase.initializeApp(FB_CONFIG);
+        window._fbDb = firebase.database();
+        window._fbRef = (db, path) => db.ref(path);
+        window._fbSet = (ref, data) => ref.set(data);
+        callback(true);
+      }catch(e){ callback(false, e); }
+    };
+    s2.onerror = ()=>callback(false, 'DB SDK failed');
+    document.head.appendChild(s2);
+  };
+  s1.onerror = ()=>callback(false, 'App SDK failed');
+  document.head.appendChild(s1);
+}
+
+function joinRoom(){
+  const raw = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+  if(!raw || raw.length < 2){
+    setRoomStatus('Please enter a room code', 'err'); return;
+  }
+  // Sanitise: letters, numbers, hyphens only
+  const code = raw.replace(/[^A-Z0-9\-]/g,'');
+  if(!code){
+    setRoomStatus('Room code can only contain letters, numbers and hyphens', 'err'); return;
+  }
+
+  const btn = document.getElementById('roomJoinBtn');
+  btn.disabled = true;
+  setRoomStatus('Connecting to Firebase...', '');
+
+  loadFirebase(function(ok, err){
+    if(!ok){
+      btn.disabled = false;
+      setRoomStatus('Firebase connection failed — check your internet connection.', 'err');
+      console.error('Firebase error:', err);
+      return;
+    }
+    window._roomCode = code;
+    setRoomStatus('Connected! Loading room...', 'ok');
+
+    // Read existing room state once, then subscribe to changes
+    const roomRef = window._fbDb.ref('rooms/' + code + '/state');
+    roomRef.once('value', function(snap){
+      const data = snap.val();
+      if(data){
+        setRoomStatus('Room found — syncing existing session...', 'ok');
+        applyRemoteState(data);
+      } else {
+        setRoomStatus('New room created — you are the first in!', 'ok');
+        // Push initial state
+        saveState();
+      }
+
+      // Subscribe to live changes from partner
+      window._fbUnsubscribe = roomRef.on('value', function(snap2){
+        const remote = snap2.val();
+        if(!remote) return;
+        // Only apply if the remote timestamp is newer (avoid overwriting own save)
+        if(remote.sessionStartTs && remote.sessionStartTs !== state.sessionStartTs){
+          applyRemoteState(remote);
+        }
+      });
+
+      // Update sync indicator
+      document.getElementById('syncDot').classList.remove('off');
+      document.getElementById('syncLabel').textContent = code;
+
+      // Hide overlay and start simulator
+      document.getElementById('roomOverlay').style.display = 'none';
+      // Save room code for next visit
+      try{ localStorage.setItem('fxsim_room', code); }catch(e){}
+      setRoomStatus('', '');
+
+    }, function(err){
+      btn.disabled = false;
+      setRoomStatus('Error reading room: ' + err.message, 'err');
+    });
+  });
+}
+
+function setRoomStatus(msg, type){
+  const el = document.getElementById('roomStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'room-status' + (type ? ' '+type : '');
+}
+
+// Auto-rejoin last room on reload
+function tryAutoRejoin(){
+  try{
+    const saved = localStorage.getItem('fxsim_room');
+    if(saved){
+      document.getElementById('roomCodeInput').value = saved;
+      // Small delay so UI is ready
+      setTimeout(joinRoom, 400);
+    }
+  }catch(e){}
+}
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+// ── Firebase sync ───────────────────────────────────────────────
+// Saves shared state (trades, positions, balance, history, reflections)
+// to Firebase under /rooms/{roomCode}/state
+// Prices and chart history are NOT synced — each browser runs its own price engine
+const SHARED_KEYS = ['balance','positions','history','reflections','eventIndex','simDay','sessionStartTs'];
+
+function saveState(){
+  // Always save full state to localStorage as fallback
+  try{localStorage.setItem('fxsim_local', JSON.stringify(state));}catch(e){}
+  // Sync shared keys to Firebase if connected
+  if(!window._fbDb || !window._roomCode) return;
+  const shared = {};
+  SHARED_KEYS.forEach(k=>{ shared[k] = state[k]; });
+  try{
+    window._fbSet(window._fbRef(window._fbDb, 'rooms/'+window._roomCode+'/state'), shared);
+  }catch(e){}
+}
+
+function loadState(){
+  try{
+    const d=localStorage.getItem('fxsim_local');
+    return d?JSON.parse(d):null;
+  }catch(e){return null;}
+}
+
+function applyRemoteState(remote){
+  if(!remote) return;
+  SHARED_KEYS.forEach(k=>{
+    if(remote[k] !== undefined) state[k] = remote[k];
+  });
+  // Re-init any missing prices
+  Object.keys(PAIRS).forEach(p=>{
+    if(!state.prices[p]) state.prices[p]=PAIRS[p].base;
+    if(!state.priceHistory[p]) state.priceHistory[p]=[PAIRS[p].base];
+  });
+  renderPositions(); renderHistory(); renderLearningNotes();
+  renderReflectTab(); renderStats(); updateUI();
+}
+let state = loadState() || {
+  balance:250000, positions:[], history:[],
+  prices:{}, priceHistory:{},
+  simDay:1, simHour:0, simMinute:0,
+  activePair:'EURUSD', chartRange:50,
+  eventIndex:0, tickCount:0,
+  hedgeMode:false,
+  reflections:{},
+  sessionStartTs: Date.now(),
+};
+// Always reset sessionStartTs on load so clock is anchored to now
+state.sessionStartTs = Date.now();
+// Clock initialised from wall time every tick — no anchors needed
+Object.keys(PAIRS).forEach(p=>{
+  if(!state.prices[p]) state.prices[p]=PAIRS[p].base;
+  if(!state.priceHistory[p]) state.priceHistory[p]=[PAIRS[p].base];
+});
+
+
+// ════════════════════════════════════════════════
+// PRICE ENGINE
+// ════════════════════════════════════════════════
+function tick(){
+  state.tickCount++;
+
+  // ── Real-time clock ─────────────────────────────────────────
+  const _now = new Date();
+  const _mult = SPEEDS[speedIdx].mult;
+  if(_mult === 1){
+    // Normal: wall clock directly
+    state.simHour   = _now.getHours();
+    state.simMinute = _now.getMinutes();
+    state.simDay    = Math.floor((Date.now() - state.sessionStartTs) / 86400000) + 1;
+  } else {
+    // Speed mode for testing
+    const _secs = (Date.now() - state.sessionStartTs) / 1000;
+    const _mins = Math.floor(_secs * _mult);
+    const _abs  = _now.getHours() * 60 + _now.getMinutes() + _mins;
+    state.simHour   = Math.floor((_abs % 1440) / 60);
+    state.simMinute = _abs % 60;
+    state.simDay    = Math.floor(_abs / 1440) + 1;
+  }
+  const _newDay  = state.simDay;
+  const _newHour = state.simHour;
+  const _newMin  = state.simMinute;
+
+  // Fire market events spaced every 8 sim-minutes from sim start (absolute)
+  if(state.eventIndex < MARKET_EVENTS.length){
+    const _everyMins = 8;
+    const _absSimMins = (_newDay - 1) * 1440 + _newHour * 60 + _newMin; // total sim minutes
+    const _expectedFired = Math.floor(Math.max(0, _absSimMins) / _everyMins);
+    while(state.eventIndex < _expectedFired && state.eventIndex < MARKET_EVENTS.length){
+      const ev = MARKET_EVENTS[state.eventIndex];
+      Object.entries(ev.effect).forEach(([p,d])=>{
+        state.prices[p]=+(state.prices[p]+d).toFixed(PAIRS[p]?.decimals||4);
+      });
+      applyRateDrift(state.eventIndex);
+      state.eventIndex++;
+      renderNews();
+    }
+  }
+  // Scale volatility by FX session: London/NY overlap = full vol, Asian = 60%, Sydney-only = 35%
+  const _hh=state.simHour;
+  const _volScale=(_hh>=12&&_hh<17)?1.0  // NY/London overlap — peak vol
+    :(_hh>=7&&_hh<21)?0.75                // Active sessions
+    :(_hh>=21||_hh<6)?0.35               // Sydney / dead of night
+    :0.55;                                // Transition
+  Object.keys(PAIRS).forEach(p=>{
+    const pr=PAIRS[p];
+    const drift=(Math.random()-0.498)*pr.vol*_volScale;
+    state.prices[p]=+Math.max(pr.base*0.85,Math.min(pr.base*1.15,state.prices[p]+drift)).toFixed(pr.decimals);
+    state.priceHistory[p].push(state.prices[p]);
+    if(state.priceHistory[p].length>400) state.priceHistory[p].shift();
+  });
+  saveState();
+  updateUI();
+}
+
+// ════════════════════════════════════════════════
+// HEDGE MODE
+// ════════════════════════════════════════════════
+function toggleHedgeMode(){
+  state.hedgeMode=!state.hedgeMode;
+  document.getElementById('hedgeModeBtn').classList.toggle('hedge-active',state.hedgeMode);
+  document.getElementById('hedgeBanner').style.display=state.hedgeMode?'block':'none';
+  document.getElementById('formTitle').textContent=state.hedgeMode?'Hedge Trade':'Place Order';
+  if(state.hedgeMode) updateHedgeBanner();
+  saveState();
+}
+
+function updateHedgeBanner(){
+  const pair=document.getElementById('orderPair').value;
+  const sc=HEDGE_SCENARIOS[pair];
+  if(!sc) return;
+  document.getElementById('hedgeTitle').textContent=sc.company+' — '+sc.title;
+  document.getElementById('hedgeBody').textContent=sc.body;
+  document.getElementById('hedgePrompt').textContent=sc.prompt;
+}
+
+// ════════════════════════════════════════════════
+// TRADING
+// ════════════════════════════════════════════════
+let selectedDir='BUY';
+function setDir(d){
+  selectedDir=d;
+  document.getElementById('btnBuy').classList.toggle('active',d==='BUY');
+  document.getElementById('btnSell').classList.toggle('active',d==='SELL');
+}
+
+function getQuote(pair){
+  const p=PAIRS[pair];
+  const mid=state.prices[pair];
+  const spread=p.pip*2;
+  return{bid:+(mid-spread/2).toFixed(p.decimals),ask:+(mid+spread/2).toFixed(p.decimals),mid,spread};
+}
+
+function placeOrder(){
+  const pair=document.getElementById('orderPair').value;
+  const size=parseFloat(document.getElementById('orderSize').value);
+  const reason=document.getElementById('orderReason').value.trim();
+  if(!size||size<100||size>50000){toast('Position size must be $100–$50,000','error');return;}
+  if(reason.split(' ').filter(w=>w).length<10){toast('Please write at least 10 words explaining your reason','error');return;}
+  const openExposure=state.positions.reduce((a,p)=>a+p.size,0);
+  if(openExposure+size>state.balance*0.8){toast('Insufficient balance — max 80% of balance in open positions','error');return;}
+  const q=getQuote(pair);
+  const entryRate=selectedDir==='BUY'?q.ask:q.bid;
+
+  let hedgeResult=null;
+  if(state.hedgeMode){
+    const sc=HEDGE_SCENARIOS[pair];
+    if(sc) hedgeResult={correct:selectedDir===sc.correctDir,explanation:sc.explanation,company:sc.company};
+  }
+
+  const position={
+    id:Date.now(),pair,dir:selectedDir,size,entryRate,
+    entryTime:`Day ${state.simDay} — ${to12h(state.simHour, state.simMinute||0)}`,
+    reason,units:size/entryRate,isHedge:state.hedgeMode,hedgeResult,
+  };
+  state.positions.push(position);
+
+  let msg=`${selectedDir} ${pair} @ ${entryRate} — $${size.toLocaleString()}`;
+  if(hedgeResult) msg+= hedgeResult.correct?' ✓ Correct hedge direction!':' ✗ Check your hedge direction';
+  toast(msg,hedgeResult?(hedgeResult.correct?'success':'error'):'success');
+  document.getElementById('orderReason').value='';
+  renderPositions(); renderStats(); saveState();
+}
+
+function closePosition(id){
+  const idx=state.positions.findIndex(p=>p.id===id);
+  if(idx<0) return;
+  const pos=state.positions[idx];
+  const q=getQuote(pos.pair);
+  const exitRate=pos.dir==='BUY'?q.bid:q.ask;
+  let pnl=pos.dir==='BUY'?(exitRate-pos.entryRate)*pos.units:(pos.entryRate-exitRate)*pos.units;
+  pnl=+pnl.toFixed(2);
+  const trade={...pos,exitRate,exitTime:`Day ${state.simDay} — ${to12h(state.simHour, state.simMinute||0)}`,pnl};
+  state.history.push(trade);
+  state.positions.splice(idx,1);
+  state.balance=+(state.balance+pnl).toFixed(2);
+  toast(`Closed ${pos.pair} — P&L: ${pnl>=0?'+':''}$${pnl.toFixed(2)}`,pnl>=0?'success':'error');
+  renderPositions(); renderHistory(); renderStats(); renderLearningNotes(); saveState();
+  // Open reflection modal
+  openReflectionModal(trade);
+}
+
+function calcOpenPnl(pos){
+  const q=getQuote(pos.pair);
+  const exitRate=pos.dir==='BUY'?q.bid:q.ask;
+  let pnl=pos.dir==='BUY'?(exitRate-pos.entryRate)*pos.units:(pos.entryRate-exitRate)*pos.units;
+  return +pnl.toFixed(2);
+}
+
+// ════════════════════════════════════════════════
+// REFLECTION MODAL
+// ════════════════════════════════════════════════
+let rTrade=null, rQIdx=0, rAnswers=[];
+
+function openReflectionModal(trade){
+  rTrade=trade; rQIdx=0; rAnswers=[];
+  const p=PAIRS[trade.pair];
+  const pnlStr=(trade.pnl>=0?'+':'')+'$'+trade.pnl.toFixed(2);
+  document.getElementById('reflectTradeSummary').innerHTML=
+    `<strong style="color:var(--text)">${p.name} · ${trade.dir}</strong> · `+
+    `Entry ${trade.entryRate} → Exit ${trade.exitRate} · `+
+    `<span style="color:${trade.pnl>=0?'var(--green2)':'var(--red2)'}">${pnlStr}</span> · ${trade.entryTime}`;
+  renderReflectQ();
+  document.getElementById('reflectModal').classList.add('show');
+}
+
+function renderReflectQ(){
+  const q=REFLECT_QUESTIONS[rQIdx];
+  const isLast=rQIdx===REFLECT_QUESTIONS.length-1;
+  document.getElementById('reflectQuestionArea').innerHTML=
+    `<div class="modal-q"><span class="modal-q-num">Q${rQIdx+1}.</span>${q}</div>`+
+    `<textarea class="modal-input" id="rAnswer" placeholder="Write your reflection here...">${rAnswers[rQIdx]||''}</textarea>`;
+  document.getElementById('reflectProgress').textContent=`Q ${rQIdx+1} / ${REFLECT_QUESTIONS.length}`;
+  document.getElementById('reflectNextBtn').textContent=isLast?'Save Reflection ✓':'Next →';
+}
+
+function nextReflectQ(){
+  rAnswers[rQIdx]=(document.getElementById('rAnswer').value||'').trim();
+  if(rQIdx<REFLECT_QUESTIONS.length-1){rQIdx++;renderReflectQ();}
+  else saveReflection();
+}
+
+function saveReflection(){
+  if(!rTrade) return;
+  state.reflections[rTrade.id]={answers:[...rAnswers],savedAt:`Day ${state.simDay} — ${to12h(state.simHour, state.simMinute||0)}`};
+  saveState();
+  document.getElementById('reflectModal').classList.remove('show');
+  rTrade=null;
+  renderLearningNotes(); renderReflectTab();
+  toast('Reflection saved to your journal','success');
+}
+
+function skipReflection(){
+  document.getElementById('reflectModal').classList.remove('show');
+  rTrade=null;
+}
+
+// ════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════
+function updateUI(){
+  // FX session: Sydney 21-06, Tokyo 00-09, London 07-17, New York 12-21 (UTC approx)
+  const _h=state.simHour;
+  const _sess=_h>=21||_h<6?'Sydney'
+    :_h>=0&&_h<9?'Tokyo'
+    :_h>=7&&_h<12?'London'
+    :_h>=12&&_h<17?'NY​/​London'
+    :_h>=17&&_h<21?'New York'
+    :'New York';
+  const _sessColor=_h>=21||_h<6?'#a78bfa'  // Sydney — purple
+    :_h>=0&&_h<9?'#f5a623'   // Tokyo — gold
+    :_h>=7&&_h<17?'#00c878'  // London/overlap — green
+    :'#3b82f6';               // New York — blue
+  const _isActive=(_h>=0&&_h<24); // FX is 24h — always active
+  const _isLowLiq=(_h>=21||_h<1); // Sydney only — lower liquidity
+  document.getElementById('simClock').textContent=`Day ${state.simDay} — ${to12h(state.simHour, state.simMinute||0)}`;
+  const _sessEl=document.getElementById('simSession');
+  if(_sessEl){_sessEl.textContent=_sess;_sessEl.style.color=_sessColor;}
+  const _dotEl=document.querySelector('.live-dot');
+  if(_dotEl){_dotEl.style.opacity=_isLowLiq?'0.4':'1';}
+  const openPnl=state.positions.reduce((a,p)=>a+calcOpenPnl(p),0);
+  const equity=state.balance+openPnl;
+  document.getElementById('balanceDisplay').textContent='$'+equity.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  renderTickers();
+  const pair=document.getElementById('orderPair').value;
+  const q=getQuote(pair); const p=PAIRS[pair];
+  document.getElementById('quoteBid').textContent=q.bid.toFixed(p.decimals);
+  document.getElementById('quoteAsk').textContent=q.ask.toFixed(p.decimals);
+  document.getElementById('quoteSpread').textContent=`Spread: ${Math.round(q.spread/p.pip)} pips`;
+  renderFwdStrip(pair);
+  const hist=state.priceHistory[state.activePair];
+  const cur=state.prices[state.activePair];
+  const ap=PAIRS[state.activePair];
+  const open=hist[Math.max(0,hist.length-50)];
+  const chg=cur-open, chgPct=chg/open*100;
+  document.getElementById('chartPairName').textContent=ap.name;
+  document.getElementById('chartPairDesc').textContent=ap.desc;
+  document.getElementById('chartPriceBig').textContent=cur.toFixed(ap.decimals);
+  const chgEl=document.getElementById('chartChange');
+  chgEl.textContent=`${chg>=0?'+':''}${chg.toFixed(ap.decimals)} (${chgPct>=0?'+':''}${chgPct.toFixed(2)}%)`;
+  chgEl.className='chart-change '+(chg>=0?'chg-up':'chg-dn');
+  drawChart(); renderPositions(); renderStats();
+  const _qt=document.getElementById('tab-quotes');
+  if(_qt&&_qt.classList.contains('active')) renderQuotesTab();
+}
+
+function renderTickers(){
+  document.getElementById('pairStrip').innerHTML=Object.entries(PAIRS).map(([code,p])=>{
+    const cur=state.prices[code];
+    const hist=state.priceHistory[code];
+    const open=hist[Math.max(0,hist.length-50)];
+    const chg=cur-open, chgPct=chg/open*100;
+    return `<div class="pair-ticker${code===state.activePair?' active':''}" onclick="setActivePair('${code}')">
+      <span class="pair-ticker-name">${p.name}</span>
+      <span class="pair-ticker-price">${cur.toFixed(p.decimals)}</span>
+      <span class="pair-ticker-chg ${chg>=0?'chg-up':'chg-dn'}">${chg>=0?'+':''}${chgPct.toFixed(2)}%</span>
+    </div>`;
+  }).join('');
+}
+
+function setActivePair(code){
+  state.activePair=code;
+  document.getElementById('orderPair').value=code;
+  onPairChange();
+}
+
+function onPairChange(){
+  state.activePair=document.getElementById('orderPair').value;
+  renderTickers();
+  if(state.hedgeMode) updateHedgeBanner();
+  const _ft=document.getElementById('tab-forwards');
+  if(_ft&&_ft.classList.contains('active')) renderForwardsTab();
+  // Refresh chart header immediately when pair changes
+  const ap=PAIRS[state.activePair];
+  const cur=state.prices[state.activePair];
+  if(ap && cur){
+    document.getElementById('chartPairName').textContent=ap.name;
+    document.getElementById('chartPairDesc').textContent=ap.desc;
+    document.getElementById('chartPriceBig').textContent=cur.toFixed(ap.decimals);
+    drawChart();
+  }
+}
+
+function drawChart(){
+  const canvas=document.getElementById('priceChart');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth,H=canvas.offsetHeight;
+  canvas.width=W;canvas.height=H;
+  const hist=state.priceHistory[state.activePair];
+  const data=hist.slice(-state.chartRange);
+  if(data.length<2) return;
+  const mn=Math.min(...data)*0.9995, mx=Math.max(...data)*1.0005;
+  const range=mx-mn||0.0001;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(30,45,61,0.8)';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=H*0.1+H*0.8*(i/4);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  const pts=data.map((v,i)=>({x:W*0.02+(W*0.96)*(i/(data.length-1)),y:H*0.1+H*0.8*(1-(v-mn)/range)}));
+  const isUp=data[data.length-1]>=data[0];
+  const lc=isUp?'#00c878':'#ff3b5c', fc=isUp?'rgba(0,200,120,0.06)':'rgba(255,59,92,0.06)';
+  ctx.beginPath();ctx.moveTo(pts[0].x,H);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(pts[pts.length-1].x,H);ctx.closePath();ctx.fillStyle=fc;ctx.fill();
+  ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=lc;ctx.lineWidth=1.5;ctx.shadowColor=lc;ctx.shadowBlur=4;ctx.stroke();ctx.shadowBlur=0;
+  const cy=pts[pts.length-1].y;
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.strokeStyle='rgba(0,212,255,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);
+  // 1M and 12M forward overlays
+  const _fs=state.prices[state.activePair];
+  [[calcForward(state.activePair,_fs,1),'rgba(255,198,90,0.5)','1M Fwd'],[calcForward(state.activePair,_fs,12),'rgba(255,198,90,0.85)','12M Fwd']].forEach(([fv,col,lbl])=>{
+    const fy=H*0.1+H*0.8*(1-(fv-mn)/range);
+    if(fy>=0&&fy<=H){
+      ctx.beginPath();ctx.moveTo(0,fy);ctx.lineTo(W,fy);
+      ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash([6,3]);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=col;ctx.font='9px Barlow Condensed';
+      ctx.fillText(lbl+' '+fv.toFixed(PAIRS[state.activePair].decimals),W-92,fy-3);
+    }
+  });
+  state.positions.filter(p=>p.pair===state.activePair).forEach(pos=>{
+    const ey=H*0.1+H*0.8*(1-(pos.entryRate-mn)/range);
+    if(ey<0||ey>H) return;
+    const col=pos.isHedge?'rgba(45,212,191,0.55)':(pos.dir==='BUY'?'rgba(0,200,120,0.5)':'rgba(255,59,92,0.5)');
+    ctx.beginPath();ctx.moveTo(0,ey);ctx.lineTo(W,ey);ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash([2,4]);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=col;ctx.font='9px Barlow Condensed';
+    ctx.fillText(`${pos.isHedge?'HEDGE ':''}${pos.dir} @ ${pos.entryRate}`,4,ey-3);
+  });
+}
+
+function setRange(n,btn){
+  state.chartRange=n;
+  document.querySelectorAll('.range-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function renderPositions(){
+  const el=document.getElementById('positionsContent');
+  if(!state.positions.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div>No open positions.<br>Place a trade using the order form on the left.</div>';
+    return;
+  }
+  let html=`<table class="positions-table"><thead><tr>
+    <th>Pair</th><th>Dir</th><th>Size</th><th>Entry</th><th>Current</th><th>P&L</th><th></th>
+  </tr></thead><tbody>`;
+  state.positions.forEach(pos=>{
+    const pnl=calcOpenPnl(pos);
+    const p=PAIRS[pos.pair];
+    html+=`<tr>
+      <td>${p.name}${pos.isHedge?'<span class="hedge-badge">Hedge</span>':''}</td>
+      <td class="${pos.dir==='BUY'?'pos-buy':'pos-sell'}">${pos.dir}</td>
+      <td>$${pos.size.toLocaleString()}</td>
+      <td>${pos.entryRate.toFixed(p.decimals)}</td>
+      <td>${state.prices[pos.pair].toFixed(p.decimals)}</td>
+      <td class="${pnl>=0?'pnl-pos':'pnl-neg'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</td>
+      <td><button class="close-btn" onclick="closePosition(${pos.id})">Close</button></td>
+    </tr>`;
+  });
+  el.innerHTML=html+'</tbody></table>';
+}
+
+function renderHistory(){
+  const el=document.getElementById('historyContent');
+  if(!state.history.length){el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div>No closed trades yet.</div>';return;}
+  let html=`<table class="history-table"><thead><tr>
+    <th>Pair</th><th>Dir</th><th>Entry</th><th>Exit</th><th>P&L</th><th>Reason</th>
+  </tr></thead><tbody>`;
+  [...state.history].reverse().forEach(t=>{
+    const p=PAIRS[t.pair];
+    html+=`<tr>
+      <td>${p.name}${t.isHedge?'<span class="hedge-badge">Hedge</span>':''}</td>
+      <td class="${t.dir==='BUY'?'pos-buy':'pos-sell'}">${t.dir}</td>
+      <td>${t.entryRate.toFixed(p.decimals)}</td>
+      <td>${t.exitRate.toFixed(p.decimals)}</td>
+      <td class="${t.pnl>=0?'pnl-pos':'pnl-neg'}">${t.pnl>=0?'+':''}$${t.pnl.toFixed(2)}</td>
+      <td class="reason-cell" title="${t.reason}">${t.reason}</td>
+    </tr>`;
+  });
+  el.innerHTML=html+'</tbody></table>';
+}
+
+function renderNews(){
+  const el=document.getElementById('newsContent');
+  const shown=MARKET_EVENTS.slice(0,Math.max(1,state.eventIndex));
+  const sessColor={Sydney:'#a78bfa',Tokyo:'#f5a623',London:'#00c878','New York':'#3b82f6','NY​/​London':'#00c878'};
+  el.innerHTML=shown.map(ev=>{
+    const sc=sessColor[ev.session]||'var(--text3)';
+    const sessTag=ev.session?`<span style="font-family:Barlow Condensed,sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:1px 5px;border-radius:1px;border:1px solid ${sc};color:${sc};margin-left:6px">${ev.session}</span>`:'';
+    return `<div class="news-item">
+      <div class="news-time">${ev.time} · ${PAIRS[ev.pair]?.name||ev.pair}${sessTag}</div>
+      <div class="news-headline">${ev.headline}</div>
+      <span class="news-impact impact-${ev.impact}">${ev.impact==='high'?'High Impact':ev.impact==='med'?'Medium Impact':'Low Impact'}</span>
+    </div>`;
+  }).reverse().join('');
+}
+
+function renderReflectTab(){
+  const el=document.getElementById('reflectContent');
+  if(!state.history.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">💭</div>Reflections appear here after you close trades.<br>You\'ll be prompted with 3 guided questions each time.</div>';
+    return;
+  }
+  el.innerHTML=[...state.history].reverse().map(t=>{
+    const p=PAIRS[t.pair];
+    const pnlClass=t.pnl>=0?'pnl-pos':'pnl-neg';
+    const pnlStr=(t.pnl>=0?'+':'')+'$'+t.pnl.toFixed(2);
+    const ref=state.reflections[t.id];
+    let hedgeSection='';
+    if(t.isHedge&&t.hedgeResult){
+      const hr=t.hedgeResult;
+      hedgeSection=`<div class="hedge-eval-box ${hr.correct?'correct':'incorrect'}">
+        <strong>${hr.correct?'✓ Correct hedge direction':'✗ Incorrect hedge direction'}</strong>
+        <div class="hedge-eval-explanation">${hr.explanation}</div>
+      </div>`;
+    }
+    if(!ref) return `<div class="reflect-card">
+      <div class="reflect-card-header">
+        <span class="reflect-card-pair">${p.name} · ${t.dir}${t.isHedge?' · HEDGE':''}</span>
+        <span class="reflect-card-pnl ${pnlClass}">${pnlStr}</span>
+      </div>
+      <div class="reflect-pending">No reflection recorded for this trade. Close a trade to be prompted.</div>
+      ${hedgeSection}
+    </div>`;
+    const qas=REFLECT_QUESTIONS.map((q,i)=>`
+      <div style="margin-bottom:8px">
+        <div class="reflect-q">Q${i+1}. ${q}</div>
+        <div class="reflect-a">${ref.answers[i]||'<em style="color:var(--text4)">No answer given</em>'}</div>
+      </div>`).join('');
+    return `<div class="reflect-card">
+      <div class="reflect-card-header">
+        <span class="reflect-card-pair">${p.name} · ${t.dir}${t.isHedge?' · HEDGE':''}</span>
+        <span class="reflect-card-pnl ${pnlClass}">${pnlStr}</span>
+      </div>
+      ${qas}${hedgeSection}
+    </div>`;
+  }).join('');
+}
+
+function renderStats(){
+  const closedPnl=state.history.reduce((a,t)=>a+t.pnl,0);
+  const openPnl=state.positions.reduce((a,p)=>a+calcOpenPnl(p),0);
+  const wins=state.history.filter(t=>t.pnl>0).length;
+  const total=state.history.length;
+  const best=total>0?Math.max(...state.history.map(t=>t.pnl)):null;
+  const worst=total>0?Math.min(...state.history.map(t=>t.pnl)):null;
+  const openExp=state.positions.reduce((a,p)=>a+p.size,0);
+  const hedgeCount=[...state.history,...state.positions].filter(t=>t.isHedge).length;
+  const id=x=>document.getElementById(x);
+  id('statTotalPnl').textContent=(closedPnl>=0?'+':'')+'$'+closedPnl.toFixed(2);
+  id('statTotalPnl').className='pnl-cell-val '+(closedPnl>0?'pos':closedPnl<0?'neg':'gold');
+  id('statOpenPnl').textContent=(openPnl>=0?'+':'')+'$'+openPnl.toFixed(2);
+  id('statOpenPnl').className='pnl-cell-val '+(openPnl>0?'pos':openPnl<0?'neg':'');
+  id('statWinRate').textContent=total>0?(wins/total*100).toFixed(0)+'%':'—';
+  id('statTrades').textContent=total;
+  id('bestTrade').textContent=best!==null?(best>=0?'+':'')+'$'+best.toFixed(2):'—';
+  id('worstTrade').textContent=worst!==null?(worst>=0?'+':'')+'$'+worst.toFixed(2):'—';
+  id('bestBar').style.width=best!==null?Math.min(100,Math.abs(best)/500*100)+'%':'0%';
+  id('worstBar').style.width=worst!==null?Math.min(100,Math.abs(worst)/500*100)+'%':'0%';
+  const capPct=Math.min(100,openExp/state.balance*100);
+  id('capitalUsed').textContent=capPct.toFixed(0)+'%';
+  id('capitalBar').style.width=capPct+'%';
+  id('tradesLogged').textContent=`${total} / 6 min`;
+  id('tradesBar').style.width=Math.min(100,total/6*100)+'%';
+  id('hedgesPlaced').textContent=hedgeCount;
+  id('hedgesBar').style.width=Math.min(100,hedgeCount/3*100)+'%';
+}
+
+function renderLearningNotes(){
+  const el=document.getElementById('learningNotes');
+  if(!state.history.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">📓</div>Your trade reasons appear here.<br>This becomes your learning journal.</div>';
+    return;
+  }
+  el.innerHTML=[...state.history].reverse().map(t=>{
+    const hasRef=!!state.reflections[t.id];
+    return `<div class="learning-note ${hasRef?'reflected':''}">
+      <div class="learning-note-pair">${PAIRS[t.pair]?.name}${t.isHedge?' · HEDGE':''} · ${t.dir} · ${t.pnl>=0?'+':''}$${t.pnl.toFixed(2)} · ${t.entryTime}${hasRef?' · 💭':''}</div>
+      ${t.reason}
+    </div>`;
+  }).join('');
+}
+
+function renderLearnTab(){
+  document.getElementById('learnContent').innerHTML=CONCEPTS.map(c=>`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:12px 14px">
+      <div style="font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:6px">${c.title}</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6">${c.body}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════════
+
+
+// ════════════════════════════════════════════════
+// 30-DAY OHLC HISTORY GENERATOR
+// ════════════════════════════════════════════════
+// Generated once on load from a seeded random walk.
+// Not persisted to localStorage — regenerated each session.
+const OHLC_HISTORY = {}; // { EURUSD: [{date,open,high,low,close,chg,chgPct}, ...] }
+
+function generateOHLC() {
+  const DAYS = 30;
+  const TICKS_PER_DAY = 120; // simulate ~120 ticks per trading day
+  // Build date labels: go back DAYS from "today" (Day 0 = start of sim)
+  const today = new Date(2025, 0, 20); // anchor date
+  Object.keys(PAIRS).forEach(code => {
+    const p = PAIRS[code];
+    let price = p.base;
+    const days = [];
+    for (let d = DAYS - 1; d >= 0; d--) {
+      const dt = new Date(today);
+      dt.setDate(today.getDate() - d);
+      // skip weekends
+      if (dt.getDay() === 0 || dt.getDay() === 6) continue;
+      const dayOpen = price;
+      let hi = price, lo = price;
+      for (let t = 0; t < TICKS_PER_DAY; t++) {
+        const drift = (Math.random() - 0.499) * p.vol * 2.5;
+        price = +Math.max(p.base * 0.85, Math.min(p.base * 1.15, price + drift)).toFixed(p.decimals);
+        if (price > hi) hi = price;
+        if (price < lo) lo = price;
+      }
+      const dayClose = price;
+      const chg = +(dayClose - dayOpen).toFixed(p.decimals);
+      const chgPct = +((chg / dayOpen) * 100).toFixed(2);
+      days.push({
+        date: dt.toLocaleDateString('en-US', {month:'short', day:'2-digit', weekday:'short'}),
+        open: dayOpen,
+        high: +hi.toFixed(p.decimals),
+        low:  +lo.toFixed(p.decimals),
+        close: dayClose,
+        chg, chgPct,
+      });
+    }
+    OHLC_HISTORY[code] = days;
+  });
+}
+generateOHLC();
+
+// Active pair for OHLC view (separate from trading pair)
+let ohlcActivePair = 'EURUSD';
+function renderQuotesTab(){
+  const el=document.getElementById('quotesContent');
+  if(!el) return;
+  const now=`Day ${state.simDay} — ${to12h(state.simHour, state.simMinute||0)}`;
+
+  // ── Live quotes table ────────────────────────────────────────
+  const liveRows=Object.entries(PAIRS).map(([code,p])=>{
+    const q=getQuote(code);
+    const hist=state.priceHistory[code];
+    const open=hist[Math.max(0,hist.length-50)];
+    const chg=q.mid-open, chgPct=chg/open*100;
+    const spreadPips=Math.round(q.spread/p.pip);
+    const isActive=code===state.activePair;
+    return `<tr class="${isActive?'active-pair':''}" style="cursor:pointer" onclick="setOHLCPair('${code}')">
+      <td>${p.name}</td>
+      <td class="q-bid">${q.bid.toFixed(p.decimals)}</td>
+      <td class="q-ask">${q.ask.toFixed(p.decimals)}</td>
+      <td class="q-spread">${spreadPips} pips</td>
+      <td class="${chg>=0?'q-chg-up':'q-chg-dn'}">${chg>=0?'+':''}${chg.toFixed(p.decimals)}</td>
+      <td class="${chg>=0?'q-chg-up':'q-chg-dn'}">${chgPct>=0?'+':''}${chgPct.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+
+  // ── OHLC pair selector tabs ──────────────────────────────────
+  const pairTabs=Object.entries(PAIRS).map(([code,p])=>
+    `<button class="ohlc-pair-tab${code===ohlcActivePair?' active':''}" onclick="setOHLCPair('${code}')">${p.name}</button>`
+  ).join('');
+
+  // ── OHLC history rows ────────────────────────────────────────
+  const history=OHLC_HISTORY[ohlcActivePair]||[];
+  const ap=PAIRS[ohlcActivePair];
+  // Calculate range for mini bar scaling
+  const allChgs=history.map(d=>Math.abs(d.chgPct));
+  const maxChg=Math.max(...allChgs,0.01);
+
+  const ohlcRows=[...history].reverse().map((d,i)=>{
+    const isToday=i===0;
+    const cls=d.chg>0?'ohlc-up':d.chg<0?'ohlc-dn':'ohlc-flat';
+    const arrow=d.chg>0?'▲':d.chg<0?'▼':'▬';
+    const barW=Math.round((Math.abs(d.chgPct)/maxChg)*48);
+    const barCol=d.chg>=0?'#00c878':'#ff3b5c';
+    const hlRange=(d.high-d.low).toFixed(ap.decimals);
+    return `<tr class="${isToday?'today-row':''}">
+      <td>${d.date}${isToday?' <span style="font-size:8px;color:var(--cyan);font-family:Barlow Condensed,sans-serif;font-weight:700;letter-spacing:1px">TODAY</span>':''}</td>
+      <td>${d.open.toFixed(ap.decimals)}</td>
+      <td style="color:var(--green2)">${d.high.toFixed(ap.decimals)}</td>
+      <td style="color:var(--red2)">${d.low.toFixed(ap.decimals)}</td>
+      <td>${d.close.toFixed(ap.decimals)}</td>
+      <td class="${cls}">${arrow} ${d.chg>=0?'+':''}${d.chg.toFixed(ap.decimals)}</td>
+      <td class="${cls}" style="white-space:nowrap">
+        ${d.chgPct>=0?'+':''}${d.chgPct.toFixed(2)}%
+        <span class="ohlc-bar" style="width:${barW}px;background:${barCol};opacity:0.6"></span>
+      </td>
+      <td style="color:var(--text3)">${hlRange}</td>
+    </tr>`;
+  }).join('');
+
+  // Summary stats
+  const ups=history.filter(d=>d.chg>0).length;
+  const dns=history.filter(d=>d.chg<0).length;
+  const totalChg=history.length>0?(history[history.length-1].close-history[0].open):0;
+  const totalChgPct=history.length>0?(totalChg/history[0].open*100):0;
+  const hiPrice=history.length>0?Math.max(...history.map(d=>d.high)):0;
+  const loPrice=history.length>0?Math.min(...history.map(d=>d.low)):0;
+  const sumCls=totalChg>=0?'ohlc-up':'ohlc-dn';
+
+  el.innerHTML=`
+    <div class="quotes-note">
+      Live quotes — <strong style="color:var(--cyan)">${now}</strong> — updates every 2 seconds. Click any row or pair button to load its 30-day history below.
+    </div>
+    <table class="quotes-table">
+      <thead><tr>
+        <th>Pair</th><th>Bid (Sell)</th><th>Ask (Buy)</th><th>Spread</th><th>Change</th><th>Change %</th>
+      </tr></thead>
+      <tbody>${liveRows}</tbody>
+    </table>
+
+    <div class="section-divider">30-Day Price History</div>
+    <div style="font-size:10px;color:var(--text2);margin-bottom:8px;line-height:1.5">
+      Simulated daily OHLC data for the 30 trading days prior to the simulation start.
+      Generated from the same volatility model as live prices.
+    </div>
+
+    <div class="ohlc-pair-tabs">${pairTabs}</div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:8px 10px">
+        <div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:3px">30D Change</div>
+        <div style="font-family:Share Tech Mono,monospace;font-size:16px" class="${sumCls}">${totalChg>=0?'+':''}${totalChg.toFixed(ap.decimals)}</div>
+        <div style="font-size:10px" class="${sumCls}">${totalChgPct>=0?'+':''}${totalChgPct.toFixed(2)}%</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:8px 10px">
+        <div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:3px">30D High</div>
+        <div style="font-family:Share Tech Mono,monospace;font-size:16px;color:var(--green2)">${hiPrice.toFixed(ap.decimals)}</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:8px 10px">
+        <div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:3px">30D Low</div>
+        <div style="font-family:Share Tech Mono,monospace;font-size:16px;color:var(--red2)">${loPrice.toFixed(ap.decimals)}</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:8px 10px">
+        <div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:3px">Up / Down Days</div>
+        <div style="font-family:Share Tech Mono,monospace;font-size:16px"><span style="color:var(--green2)">${ups}</span> / <span style="color:var(--red2)">${dns}</span></div>
+      </div>
+    </div>
+
+    <table class="ohlc-table">
+      <thead><tr>
+        <th>Date</th><th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Change</th><th>Chg %</th><th>H-L Range</th>
+      </tr></thead>
+      <tbody>${ohlcRows}</tbody>
+    </table>`;
+}
+
+function setOHLCPair(code){
+  ohlcActivePair=code;
+  const qt=document.getElementById('tab-quotes');
+  if(qt&&qt.classList.contains('active')) renderQuotesTab();
+}
+function showCentreTab(id,btn){
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.centre-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='quotes') renderQuotesTab();
+  if(id==='history') renderHistory();
+  if(id==='news') renderNews();
+  if(id==='reflect') renderReflectTab();
+  if(id==='forwards') renderForwardsTab();
+  if(id==='learn') renderLearnTab();
+}
+
+// ════════════════════════════════════════════════
+// EXPORT
+// ════════════════════════════════════════════════
+function exportLog(){
+  if(!state.history.length){toast('No closed trades to export yet','error');return;}
+  let csv='FX Trading Simulator — Trade Log\n\n';
+  csv+='Pair,Direction,Type,Entry Rate,Entry Time,Exit Rate,Exit Time,Size ($),P&L ($),Reason,Reflection Q1,Reflection Q2,Reflection Q3\n';
+  state.history.forEach(t=>{
+    const p=PAIRS[t.pair];
+    const ref=state.reflections[t.id];
+    const qa=i=>ref?`"${(ref.answers[i]||'').replace(/"/g,"'")}"`:'"—"';
+    csv+=`${p.name},${t.dir},${t.isHedge?'Hedge':'Speculative'},${t.entryRate},${t.entryTime},${t.exitRate},${t.exitTime},${t.size},${t.pnl},"${t.reason.replace(/"/g,"'")}",${qa(0)},${qa(1)},${qa(2)}\n`;
+  });
+  csv+=`\nSummary\nTotal Closed P&L,$${state.history.reduce((a,t)=>a+t.pnl,0).toFixed(2)}\n`;
+  csv+=`Trades Completed,${state.history.length}\nHedge Trades,${state.history.filter(t=>t.isHedge).length}\nWinning Trades,${state.history.filter(t=>t.pnl>0).length}\nBalance,$${state.balance.toFixed(2)}\n`;
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='fx_trade_log.csv';a.click();
+  URL.revokeObjectURL(url);
+  toast('Trade log exported','success');
+}
+
+// ════════════════════════════════════════════════
+// PRINT REPORT
+// ════════════════════════════════════════════════
+function printReport(){
+  if(!state.history.length&&!state.positions.length){toast('No trades to report yet','error');return;}
+  const closedPnl=state.history.reduce((a,t)=>a+t.pnl,0);
+  const openPnl=state.positions.reduce((a,p)=>a+calcOpenPnl(p),0);
+  const equity=state.balance+openPnl;
+  const wins=state.history.filter(t=>t.pnl>0).length;
+  const losses=state.history.filter(t=>t.pnl<=0).length;
+  const winRate=state.history.length>0?(wins/state.history.length*100).toFixed(0):0;
+  const best=state.history.length>0?Math.max(...state.history.map(t=>t.pnl)):0;
+  const worst=state.history.length>0?Math.min(...state.history.map(t=>t.pnl)):0;
+  const hedgeTrades=state.history.filter(t=>t.isHedge);
+  const fmt=n=>(n>=0?'+':'')+'$'+Math.abs(n).toFixed(2);
+
+  const tradeRows=state.history.map((t,i)=>{
+    const p=PAIRS[t.pair];
+    const pc=t.pnl>=0?'#1a6b3a':'#8b1a1a';
+    const htag=t.isHedge?'<span style="font-size:8px;background:#e6faf7;color:#167a6a;border:1px solid #2dd4bf;padding:1px 5px;border-radius:1px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-left:4px">Hedge</span>':'';
+    return `<tr style="background:${i%2===0?'#f9f9f7':'#fff'}">
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e0d5;font-weight:500">${i+1}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e0d5">${p?.name}${htag}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e0d5;color:${t.dir==='BUY'?'#1a5c3a':'#8b1a1a'};font-weight:600">${t.dir}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e0d5;font-family:monospace">${t.entryRate}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e0d5;font-family:monospace">${t.exitRate}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e0d5;font-family:monospace">$${t.size.toLocaleString()}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e0d5;font-family:monospace;color:${pc};font-weight:600">${fmt(t.pnl)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e5e0d5;font-size:10px;color:#555">${t.entryTime}</td>
+    </tr>
+    <tr style="background:${i%2===0?'#f9f9f7':'#fff'}">
+      <td colspan="8" style="padding:4px 10px 10px;border-bottom:2px solid #e5e0d5;font-size:11px;color:#444;font-style:italic">
+        <strong style="color:#333;font-style:normal">Reasoning:</strong> ${t.reason}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const reflectSection=state.history.map((t,i)=>{
+    const p=PAIRS[t.pair];
+    const ref=state.reflections[t.id];
+    const pc=t.pnl>=0?'#1a6b3a':'#8b1a1a';
+    let hedgeEval='';
+    if(t.isHedge&&t.hedgeResult){
+      const hr=t.hedgeResult;
+      hedgeEval=`<div style="margin-top:8px;padding:8px 10px;background:${hr.correct?'#f0faf5':'#fdf0f0'};border-left:3px solid ${hr.correct?'#2d7a4a':'#8b2a2a'};font-size:11px;line-height:1.5">
+        <strong>${hr.correct?'✓ Correct hedge direction':'✗ Incorrect hedge direction'}</strong><br>
+        <span style="color:#444">${hr.explanation}</span>
+      </div>`;
+    }
+    if(!ref) return `<div style="margin-bottom:14px;padding:12px 16px;border:1px solid #e0dbd0;background:#faf9f6;border-radius:2px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:5px">
+        Trade ${i+1} · ${p?.name} · ${t.dir} · <span style="color:${pc}">${fmt(t.pnl)}</span></div>
+      <div style="font-size:11px;color:#999;font-style:italic">No reflection recorded for this trade.</div>${hedgeEval}
+    </div>`;
+    const qas=REFLECT_QUESTIONS.map((q,qi)=>`
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:#888;margin-bottom:3px;font-style:italic">Q${qi+1}. ${q}</div>
+        <div style="font-size:11px;color:#333;line-height:1.5;padding:5px 8px;background:#fff;border-left:2px solid #a78bfa">${ref.answers[qi]||'<em style="color:#bbb">No answer given</em>'}</div>
+      </div>`).join('');
+    return `<div style="margin-bottom:20px;padding:14px 16px;border:1px solid #e0dbd0;border-left:4px solid ${t.pnl>=0?'#2d7a4a':'#8b2a2a'};background:#faf9f6;border-radius:2px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:8px">
+        Trade ${i+1} · ${p?.name} · ${t.dir}${t.isHedge?' · HEDGE':''} · <span style="color:${pc}">${fmt(t.pnl)}</span> · ${t.entryTime}</div>
+      <div style="font-size:11px;margin-bottom:10px;padding:7px 10px;background:#f5f2ec;border-left:2px solid #c8a44a"><strong>Original reasoning:</strong> ${t.reason}</div>
+      ${qas}${hedgeEval}
+    </div>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>FX Trading Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Barlow,sans-serif;font-size:12px;color:#1a1a1a;background:#fff}
+  @media print{body{padding:0}.no-print{display:none!important}.page-break{page-break-before:always}@page{margin:20mm 18mm;size:A4}}
+  @media screen{body{max-width:860px;margin:0 auto;padding:30px 24px}}
+  .cover{border-bottom:3px solid #1a1a1a;padding-bottom:28px;margin-bottom:32px;display:flex;align-items:flex-end;justify-content:space-between}
+  .cover-tag{font-family:Barlow Condensed,sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:8px}
+  .cover-title{font-family:Lora,serif;font-size:32px;font-weight:600;line-height:1.1;margin-bottom:4px}
+  .cover-title em{font-style:italic;color:#8a5c1a}
+  .cover-sub{font-size:13px;color:#555}
+  .cover-right{text-align:right}.cover-date{font-size:11px;color:#888;margin-bottom:4px}
+  .cover-course{font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#aaa}
+  .shdr{font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:14px;margin-top:28px;display:flex;align-items:center;justify-content:space-between}
+  .shdr:first-of-type{margin-top:0}
+  .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+  .scell{border:1px solid #e0dbd0;border-radius:2px;padding:12px 14px}
+  .scell-lbl{font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:5px}
+  .scell-val{font-family:Lora,serif;font-size:24px;font-weight:600;line-height:1}
+  .scell-val.pos{color:#1a6b3a}.scell-val.neg{color:#8b1a1a}.scell-val.gold{color:#8a5c1a}
+  .scell-sub{font-size:10px;color:#999;margin-top:3px}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:4px}
+  th{font-family:Barlow Condensed,sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#555;padding:8px 10px;border-bottom:2px solid #1a1a1a;text-align:left;background:#f5f2ec}
+  th:not(:first-child){text-align:right}td:not(:first-child){text-align:right}
+  .print-bar{background:#1a1a1a;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;border-radius:3px}
+  .print-bar-text{font-size:12px;color:#aaa}
+  .print-btn{font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:8px 20px;border-radius:2px;cursor:pointer;border:1px solid #c8a44a;background:rgba(200,164,74,0.15);color:#c8a44a}
+  .disclaimer{font-size:9px;color:#aaa;margin-top:28px;padding-top:14px;border-top:1px solid #eee;line-height:1.6}
+  </style></head><body>
+  <div class="no-print print-bar">
+    <span class="print-bar-text">Ready to print or save as PDF — Ctrl+P / Cmd+P</span>
+    <button class="print-btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+  </div>
+  <div class="cover">
+    <div><div class="cover-tag">International Finance — FX Trading Simulation</div>
+    <div class="cover-title">FX Trading <em>Report</em></div>
+    <div class="cover-sub">Trade Log, Performance Summary, Reflections &amp; Learning Journal</div></div>
+    <div class="cover-right">
+      <div class="cover-date">Generated: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</div>
+      <div class="cover-course">Undergraduate International Finance</div>
+    </div>
+  </div>
+  <div class="shdr">Performance Summary</div>
+  <div class="sgrid">
+    <div class="scell"><div class="scell-lbl">Starting Balance</div><div class="scell-val">$250,000</div><div class="scell-sub">Virtual capital</div></div>
+    <div class="scell"><div class="scell-lbl">Final Equity</div><div class="scell-val ${equity>=250000?'pos':'neg'}">$${equity.toLocaleString('en-US',{minimumFractionDigits:2})}</div><div class="scell-sub">Incl. open positions</div></div>
+    <div class="scell"><div class="scell-lbl">Realised P&amp;L</div><div class="scell-val ${closedPnl>=0?'pos':'neg'}">${fmt(closedPnl)}</div><div class="scell-sub">Closed trades only</div></div>
+    <div class="scell"><div class="scell-lbl">Win Rate</div><div class="scell-val gold">${winRate}%</div><div class="scell-sub">${wins} wins / ${losses} losses</div></div>
+    <div class="scell"><div class="scell-lbl">Trades Completed</div><div class="scell-val">${state.history.length}</div><div class="scell-sub">Min. required: 6</div></div>
+    <div class="scell"><div class="scell-lbl">Hedge Trades</div><div class="scell-val" style="color:#167a6a">${hedgeTrades.length}</div><div class="scell-sub">Corporate hedge mode</div></div>
+    <div class="scell"><div class="scell-lbl">Best Trade</div><div class="scell-val pos">${fmt(best)}</div><div class="scell-sub">Single trade profit</div></div>
+    <div class="scell"><div class="scell-lbl">Worst Trade</div><div class="scell-val neg">${fmt(worst)}</div><div class="scell-sub">Single trade loss</div></div>
+  </div>
+  <div class="shdr page-break"><span>Closed Trade Log</span><span style="font-size:9px;color:#aaa">${state.history.length} trades</span></div>
+  ${state.history.length>0?`<table><thead><tr><th>#</th><th>Pair</th><th>Dir</th><th>Entry</th><th>Exit</th><th>Size</th><th style="text-align:right">P&L</th><th>Time</th></tr></thead><tbody>${tradeRows}</tbody></table>`:'<p style="color:#999;font-style:italic;padding:16px 0">No closed trades.</p>'}
+  <div class="shdr page-break"><span>Reflections &amp; Learning Journal</span><span style="font-size:9px;color:#aaa">Post-trade guided reflections</span></div>
+  ${reflectSection||'<p style="color:#999;font-style:italic;padding:16px 0">No reflections recorded.</p>'}
+  <div class="disclaimer">Generated by the FX Trading Simulator for educational purposes as part of an undergraduate International Finance course. All prices, trades, and balances are simulated. Trade reasoning and reflections were recorded by the student at time of execution.</div>
+  </body></html>`;
+
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+// ════════════════════════════════════════════════
+// TOAST & RESET
+// ════════════════════════════════════════════════
+let toastTimer;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show '+(type||'');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3500);
+}
+function confirmReset(){
+  if(confirm('Reset simulator? All trades, reflections, and balance will be cleared.')){
+    localStorage.removeItem('fxsim');location.reload();
+  }
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+if(state.hedgeMode){
+  document.getElementById('hedgeModeBtn').classList.add('hedge-active');
+  document.getElementById('hedgeBanner').style.display='block';
+  document.getElementById('formTitle').textContent='Hedge Trade';
+  updateHedgeBanner();
+}
+
+// ════════════════════════════════════════════════
+// GROUP ASSIGNMENT
+// ════════════════════════════════════════════════
+// Eligible pairs: all except USDSAR (Saudi Riyal)
+const ASSIGN_PAIRS = ['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD',
+  'NZDUSD','USDCHF','USDSEK','USDNOK','USDHKD','USDCNY','USDBRL'];
+
+// Groups 1–10, each gets a unique pair (12 pairs, 10 groups → pick 10 of 12)
+function buildGroupAssignments(seed) {
+  // Simple seeded shuffle using the seed value
+  const pairs = [...ASSIGN_PAIRS];
+  let s = seed;
+  for (let i = pairs.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i + 1);
+    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+  }
+  // Assign groups 1–10 to first 10 shuffled pairs
+  const assignments = {};
+  for (let g = 1; g <= 10; g++) {
+    assignments[g] = pairs[g - 1];
+  }
+  return assignments;
+}
+
+let groupAssignments = {};
+let myGroup = null;
+
+function showAssignment() {
+  // Pick a random group 1–10
+  const seed = Date.now() & 0xffffff;
+  groupAssignments = buildGroupAssignments(seed);
+  myGroup = Math.floor(Math.random() * 10) + 1;
+  renderAssignmentModal();
+  document.getElementById('assignOverlay').style.display = 'flex';
+}
+
+function reassign() {
+  const seed = (Date.now() * Math.random()) & 0xffffff;
+  groupAssignments = buildGroupAssignments(seed);
+  myGroup = Math.floor(Math.random() * 10) + 1;
+  renderAssignmentModal();
+}
+
+function renderAssignmentModal() {
+  const code = groupAssignments[myGroup];
+  const p = PAIRS[code];
+  document.getElementById('assignPair').textContent = p.name;
+  document.getElementById('assignDesc').textContent = p.desc;
+  document.getElementById('assignGroup').textContent = `Group ${myGroup} of 10`;
+
+  // Full grid of all 10 groups
+  const grid = document.getElementById('assignGrid');
+  grid.innerHTML = Object.entries(groupAssignments).map(([g, c]) => {
+    const isMine = parseInt(g) === myGroup;
+    return `<div class="assign-cell${isMine ? ' mine' : ''}">
+      <div class="assign-cell-grp">Group ${g}</div>
+      <div class="assign-cell-pair">${PAIRS[c].name}</div>
+    </div>`;
+  }).join('');
+}
+
+function closeAssignment() {
+  document.getElementById('assignOverlay').style.display = 'none';
+  // Set the assigned pair as active
+  if (myGroup && groupAssignments[myGroup]) {
+    const code = groupAssignments[myGroup];
+    setActivePair(code);
+  }
+}
+
+renderNews(); renderLearnTab(); renderLearningNotes(); renderStats();
+requestAnimationFrame(()=>{ updateUI(); });
+setInterval(tick,2000);
+window.addEventListener('resize',drawChart);
+document.getElementById('reflectModal').addEventListener('click',function(e){if(e.target===this)skipReflection();});
+// Auto-rejoin saved room on reload
+tryAutoRejoin();
+</script>
+</body>
+</html>
